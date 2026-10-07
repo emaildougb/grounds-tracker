@@ -2,7 +2,7 @@
 
 Phone app for the Facilities and Grounds "Grounds Tracker" SharePoint list. Tyler marks tasks Start, Done, or Not done, changes who it's assigned to, adds work notes and photos. Every change writes straight to the SharePoint list, so the "Grounds Tracker Alerts" flow and the log still fire.
 
-**Version 1.1**
+**Version 1.2**
 
 ## Links
 
@@ -41,8 +41,9 @@ Needs someone who can create app registrations in the NCEMS Microsoft 365 tenant
 4. Click **Register**.
 5. On the Overview page, copy the **Application (client) ID**. Also check the **Directory (tenant) ID** says `153dc089-095e-4a20-8d10-39321a0aca09` (that's what the app is set to).
 6. Left menu: **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**. Search and check **Sites.ReadWrite.All**. Click **Add permissions**. (User.Read is already there. Leave it.)
-7. Click **Grant admin consent for North Country EMS** and confirm. The status column should turn green.
-8. Do NOT create a client secret or certificate. A phone app can't keep a secret, and SPA sign-in doesn't need one.
+7. Still in API permissions: **Add a permission** > **SharePoint** > **Delegated permissions** > check **AllSites.Write** > **Add permissions**. (Lets the people picker search all of NCEMS and add new people to the site.)
+8. Click **Grant admin consent for North Country EMS** and confirm. The status column should turn green.
+9. Do NOT create a client secret or certificate. A phone app can't keep a secret, and SPA sign-in doesn't need one.
 
 That's it in Entra. Nothing else changes in SharePoint or Power Automate.
 
@@ -121,6 +122,12 @@ The app doesn't touch the "Grounds Tracker Alerts" flow. It edits list items the
 If the app ever moves to another URL (like a custom domain), add that exact URL as another SPA redirect URI in Entra > App registrations > NCEMS Grounds Tracker > Authentication.
 
 ## Changelog
+
+### v1.2
+- People picker searches everyone in the NCEMS Microsoft 365 directory (type 2+ letters), not just people the SharePoint site already knows. Works for Assigned To and Responsible for Follow-up
+- Picking someone new adds them to the site automatically, then assigns them
+- Needs one extra Entra permission: SharePoint > Delegated > AllSites.Write, with admin consent (see setup)
+- Playwright smoke test (demo mode): directory search, assign new person, no duplicates after adding
 
 ### v1.1
 - Assigned To picker: type any name (vendor, other department) and assign it. Saves to the new `AssignedToOther` text column

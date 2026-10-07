@@ -429,7 +429,7 @@
   <div class="modal">
     <div class="modal-head" id="pp-head">Assigned To</div>
     <div class="modal-body">
-      <input class="text-in" id="pp-search" placeholder="Search or type a name" oninput="renderPeople()" autocomplete="off" style="margin-top:0">
+      <input class="text-in" id="pp-search" placeholder="Search or type a name" oninput="onPpInput()" autocomplete="off" style="margin-top:0">
       <div class="ppl-list" id="pp-list"></div>
     </div>
     <div class="modal-foot"><button class="big-btn ghost" onclick="closePeople()">Cancel</button></div>
@@ -456,7 +456,7 @@
    Reads and writes the "Grounds Tracker" SharePoint list through
    Microsoft Graph. Sign-in is MSAL (single page app, no secrets).
    ============================================================ */
-const VERSION = '1.1';
+const VERSION = '1.2';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',   // <-- paste the Application (client) ID from Entra here
@@ -471,6 +471,7 @@ const CONFIG = {
 };
 
 const SCOPES = ['Sites.ReadWrite.All'];
+const SP_SCOPES = ['https://' + CONFIG.siteHost + '/AllSites.Write'];  // SharePoint REST: directory search + add person to site
 const GRAPH = 'https://graph.microsoft.com/v1.0';
 
 const STATIONS = [
@@ -643,17 +644,34 @@ function signOut() {
   msalApp.logoutRedirect({ account, postLogoutRedirectUri: redirectUri() });
 }
 
-async function getToken() {
+async function getToken(scopes) {
+  scopes = scopes || SCOPES;
   try {
-    const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account });
+    const r = await msalApp.acquireTokenSilent({ scopes, account });
     return r.accessToken;
   } catch (e) {
     if (e instanceof msal.InteractionRequiredAuthError || /interaction_required|login_required|consent_required/.test(e.errorCode || '')) {
-      await msalApp.acquireTokenRedirect({ scopes: SCOPES, account });
+      await msalApp.acquireTokenRedirect({ scopes, account });
       return new Promise(() => {}); // page is leaving
     }
     throw e;
   }
+}
+
+/* ---------------- SharePoint REST (directory people) ---------------- */
+async function spPost(path, body) {
+  const token = await getToken(SP_SCOPES);
+  const res = await fetch('https://' + CONFIG.siteHost + CONFIG.sitePath + '/_api' + path, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=nometadata', 'Content-Type': 'application/json;odata=nometadata' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { const j = await res.json(); msg = (j['odata.error'] && j['odata.error'].message && j['odata.error'].message.value) || (j.error && j.error.message) || msg; } catch (e) {}
+    const err = new Error(friendlyErr(res.status, msg)); err.status = res.status; throw err;
+  }
+  return res.json();
 }
 
 /* ---------------- Graph ---------------- */
@@ -721,6 +739,19 @@ const API = {
     const j = await graph('/sites/' + sid + '/lists/' + CONFIG.listId + '/columns?$select=name&$top=999');
     return (j.value || []).some(c => c.name === name);
   },
+  // Search everyone in the NCEMS Microsoft 365 directory (same list as Outlook's address book)
+  async dirSearch(q) {
+    const j = await spPost('/SP.UI.ApplicationPages.ClientPeoplePickerWebServiceInterface.clientPeoplePickerSearchUser',
+      { queryParams: { QueryString: q, MaximumEntitySuggestions: 15, AllowEmailAddresses: false, AllowMultipleEntities: false, PrincipalSource: 15, PrincipalType: 1 } });
+    return JSON.parse(j.value || '[]')
+      .map(e => ({ key: e.Key, name: e.DisplayText, email: (e.EntityData && (e.EntityData.Email || e.EntityData.UserPrincipalName)) || '' }))
+      .filter(p => p.key && p.name);
+  },
+  // Make sure that person exists on the site so a Person column can point at them
+  async ensurePerson(key) {
+    const j = await spPost('/web/ensureuser', { logonName: key });
+    return { id: String(j.Id), name: j.Title, email: j.Email || '' };
+  },
   async update(id, fields) {
     const sid = await getSiteId();
     return graph('/sites/' + sid + '/lists/' + CONFIG.listId + '/items/' + id + '/fields', { method: 'PATCH', json: fields });
@@ -766,8 +797,12 @@ function setupDemo() {
   ];
   let demoPhotos = {};
   API.tasks = async () => { await sleep(250); return items.map(it => mapItem(JSON.parse(JSON.stringify(it)))); };
-  API.people = async () => demoPeople;
+  API.people = async () => demoPeople.slice();
   API.hasColumn = async () => true;
+  const dirPeople = [['Andy Fields','a.fields@northcountryems.org'],['Nick Stafford','n.stafford@northcountryems.org'],['Sam Rivera','s.rivera@northcountryems.org']];
+  API.dirSearch = async q => { await sleep(300); const ql = q.toLowerCase(); return demoPeople.concat(dirPeople.map(p => ({ name: p[0], email: p[1] }))).filter(p => (p.name + ' ' + p.email).toLowerCase().includes(ql)).map(p => ({ key: 'i:0#.f|membership|' + p.email, name: p.name, email: p.email })); };
+  let nextPid = 100;
+  API.ensurePerson = async key => { await sleep(300); const email = key.split('|').pop(); const hit = demoPeople.find(p => p.email === email); if (hit) return hit; const d = dirPeople.find(p => p[1] === email); const np = { id: String(nextPid++), name: d ? d[0] : email, email }; demoPeople.push(np); return np; };
   API.update = async (id, fields) => { await sleep(300); const it = items.find(i => i.id === id); Object.assign(it.fields, fields); return it.fields; };
   API.photos = async id => demoPhotos[id] || [];
   API.uploadPhoto = async (id, blob, name) => { await sleep(500); const u = URL.createObjectURL(blob); (demoPhotos[id] = demoPhotos[id] || []).unshift({ name, thumb: u, full: u }); return {}; };
@@ -1005,8 +1040,33 @@ function saveNc() {
 
 /* People picker */
 let ppTask = null, ppField = null;
+let dirResults = [], dirState = '', dirSeq = 0, dirTimer = null;
+function onPpInput() {
+  renderPeople();
+  clearTimeout(dirTimer);
+  const q = $('pp-search').value.trim();
+  if (q.length < 2) { dirResults = []; dirState = ''; renderPeople(); return; }
+  dirState = 'loading'; renderPeople();
+  dirTimer = setTimeout(async () => {
+    const seq = ++dirSeq;
+    try { const r = await API.dirSearch(q); if (seq !== dirSeq) return; dirResults = r; dirState = 'ok'; }
+    catch (e) { if (seq !== dirSeq) return; dirResults = []; dirState = 'err:' + (e.message || e); }
+    renderPeople();
+  }, 300);
+}
+async function pickDirPerson(i) {
+  const d = dirResults[i]; if (!d) return;
+  const btn = document.querySelectorAll('.ppl.dir')[i]; if (btn) btn.querySelector('span').textContent = 'Adding to the site...';
+  try {
+    const p = await API.ensurePerson(d.key);
+    if (!people.some(x => x.id === p.id)) people.push(p);
+    peopleById[p.id] = p;
+    pickPerson(p.id);
+  } catch (e) { toast('Could not add ' + d.name + ': ' + (e.message || e), { err: true, ms: 7000 }); renderPeople(); }
+}
 function openPeople(id, field) {
   ppTask = id; ppField = field;
+  dirResults = []; dirState = ''; dirSeq++;
   $('pp-head').textContent = field === 'AssignedTo' ? 'Assigned To' : 'Responsible for Follow-up';
   $('pp-search').value = '';
   renderPeople();
@@ -1022,11 +1082,22 @@ function renderPeople() {
   const list = people.filter(p => !q || (p.name + ' ' + p.email).toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
   $('pp-list').innerHTML = (list.length ? list.map(p =>
     '<button class="ppl' + (p.id === cur ? ' cur' : '') + '" onclick="pickPerson(\'' + p.id + '\')"><b>' + esc(p.name) + (p.id === cur ? ' &#10003;' : '') + '</b><span>' + esc(p.email) + '</span></button>').join('')
-    : '<div class="st-empty">' + (people.length ? 'No match' : 'Loading people...') + '</div>') +
+    : '<div class="st-empty">' + (people.length ? (q.length >= 2 ? 'Not on the site yet' : 'No match') : 'Loading people...') + '</div>') +
+    dirHtml(list, q) +
     (isAssign && raw ? (hasOtherCol === false
         ? '<div class="ppl" style="cursor:default"><b>Type-in names are off</b><span>Add the ' + esc(CONFIG.otherField) + ' column to the SharePoint list first (see README)</span></div>'
         : '<button class="ppl other" onclick="pickOther()"><b>Assign to &ldquo;' + esc(raw) + '&rdquo;</b><span>Type-in name (vendor, other department). No email goes out.</span></button>') : '') +
     ((cur || (isAssign && t.assignedOther)) ? '<button class="ppl" onclick="pickPerson(\'\')"><b>Clear (nobody)</b></button>' : '');
+}
+function dirHtml(localList, q) {
+  if (q.length < 2) return '';
+  const have = new Set(localList.map(p => (p.email || '').toLowerCase()));
+  const extra = dirResults.map((d, i) => ({ d, i })).filter(x => !have.has((x.d.email || '').toLowerCase()));
+  let h = '<div class="blk-label" style="margin:12px 0 0">All NCEMS</div>';
+  if (dirState === 'loading') return h + '<div class="st-empty">Searching...</div>';
+  if (dirState.startsWith('err:')) return h + '<div class="st-empty">Directory search unavailable (' + esc(dirState.slice(4)) + ')</div>';
+  if (!extra.length) return dirState === 'ok' ? h + '<div class="st-empty">No one else found</div>' : '';
+  return h + extra.map(x => '<button class="ppl dir" onclick="pickDirPerson(' + x.i + ')"><b>' + esc(x.d.name) + '</b><span>' + esc(x.d.email) + '</span></button>').join('');
 }
 function pickOther() {
   const name = $('pp-search').value.trim().slice(0, 255); if (!name) return;
