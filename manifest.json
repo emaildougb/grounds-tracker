@@ -1,13 +1,22 @@
 {
-  "name": "NCEMS Grounds Tracker",
-  "short_name": "Grounds",
+  "name": "NCEMS Facilities and Grounds",
+  "short_name": "Facilities",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1C3A1C",
   "theme_color": "#1C3A1C",
   "icons": [
-    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

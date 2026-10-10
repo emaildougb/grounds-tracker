@@ -1,148 +1,135 @@
-# NCEMS Grounds Tracker
+# NCEMS Facilities and Grounds
 
-Phone app for the Facilities and Grounds "Grounds Tracker" SharePoint list. Tyler marks tasks Start, Done, or Not done, changes who it's assigned to, adds work notes and photos. Every change writes straight to the SharePoint list, so the "Grounds Tracker Alerts" flow and the log still fire.
+One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sections, switched at the top:
 
-**Version 1.2**
+- **Facilities** (Nick Stafford and the BCs): report a problem, work orders, the scheduled service calendar, monthly walkthroughs, budget, replacement planning.
+- **Grounds** (Tyler Komm): the Grounds Tracker list, same as before.
+
+Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
+
+**Version 2.0**
 
 ## Links
 
 - Live: [https://emaildougb.github.io/grounds-tracker/](https://emaildougb.github.io/grounds-tracker/)
 - Demo (sample data, no sign-in): [https://emaildougb.github.io/grounds-tracker/?demo=1](https://emaildougb.github.io/grounds-tracker/?demo=1)
+  - See it as someone else: add `&as=nick`, `&as=tyler`, `&as=bryce`, `&as=dennis` or `&as=staff`
 - Repo: [https://github.com/emaildougb/grounds-tracker](https://github.com/emaildougb/grounds-tracker)
-- Upload: [https://github.com/emaildougb/grounds-tracker/upload/main](https://github.com/emaildougb/grounds-tracker/upload/main)
-- SharePoint list: [https://northcountryemsorg.sharepoint.com/sites/FacilitiesandGrounds](https://northcountryemsorg.sharepoint.com/sites/FacilitiesandGrounds)
+- SharePoint site: [https://northcountryemsorg.sharepoint.com/sites/FacilitiesandGrounds](https://northcountryemsorg.sharepoint.com/sites/FacilitiesandGrounds)
 
-## Files (upload ALL of these)
+The URL stayed the same so Tyler's home screen icon, the Microsoft sign-in setup and the Grounds alert flow all keep working.
+
+## Files
 
 - `index.html` (the whole app)
 - `manifest.json` (home screen app mode)
 - `logo.png`, `apple-touch-icon.png` (icons)
 - `README.md` (this file)
 
-## One-time setup
+## Who sees what
 
-### 1. Create the repo
+Roles come from the email addresses in `CONFIG` at the top of the script.
 
-1. Make a new public repo on GitHub named `grounds-tracker` under emaildougb.
-2. Upload the files above.
-3. Settings > Pages > Source: Deploy from a branch, `main`, `/ (root)`. Save.
-4. Wait for it to go green. The app lives at https://emaildougb.github.io/grounds-tracker/
+| Person | Role | Starts on | Can do |
+|---|---|---|---|
+| Doug, Dennis, Derek | Battalion Chief | Facilities | Everything, including building next year's budget |
+| Bryce | Chief | Facilities | Everything, plus **Approve** the budget |
+| Nick Stafford | Facilities | Facilities | Work orders, schedule, checks, building items. Sees the budget, can't change it |
+| Tyler Komm | Grounds | Grounds | Grounds tasks. Can open Facilities too |
+| Anyone else on the site | Staff | Facilities | Report a problem, see everything, update work orders |
 
-### 2. Register the app in Microsoft Entra (about 5 minutes)
+The app only does what the person's SharePoint permissions allow. Nick and anyone else who works in it need to be **members** of the Facilities and Grounds team.
 
-Needs someone who can create app registrations in the NCEMS Microsoft 365 tenant (a Global Admin or Application Administrator).
+## First time setup (once, by a BC)
 
-1. Go to [https://entra.microsoft.com](https://entra.microsoft.com) and sign in with your NCEMS account.
-2. Left menu: Identity > Applications > **App registrations** > **New registration**.
-3. Fill it in:
-   - Name: `NCEMS Grounds Tracker`
-   - Supported account types: **Accounts in this organizational directory only (Single tenant)**
-   - Redirect URI: pick platform **Single-page application (SPA)** and enter `https://emaildougb.github.io/grounds-tracker/` (trailing slash matters)
-4. Click **Register**.
-5. On the Overview page, copy the **Application (client) ID**. Also check the **Directory (tenant) ID** says `153dc089-095e-4a20-8d10-39321a0aca09` (that's what the app is set to).
-6. Left menu: **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**. Search and check **Sites.ReadWrite.All**. Click **Add permissions**. (User.Read is already there. Leave it.)
-7. Still in API permissions: **Add a permission** > **SharePoint** > **Delegated permissions** > check **AllSites.Write** > **Add permissions**. (Lets the people picker search all of NCEMS and add new people to the site.)
-8. Click **Grant admin consent for North Country EMS** and confirm. The status column should turn green.
-9. Do NOT create a client secret or certificate. A phone app can't keep a secret, and SPA sign-in doesn't need one.
+No new Microsoft Entra steps. The app uses the same registration as the Grounds Tracker (Sites.ReadWrite.All and AllSites.Write, already consented).
 
-That's it in Entra. Nothing else changes in SharePoint or Power Automate.
+1. Open the app and sign in as a BC.
+2. Tap **Facilities**. The app says Facilities isn't set up yet.
+3. Tap **Set up Facilities**. It creates five SharePoint lists on the site and loads the starter data:
+   - **Facility Work Orders**: repairs and jobs
+   - **Facility Services**: 77 scheduled services across the four stations (fire alarm, extinguishers, HVAC, generator, backflow, bay doors...)
+   - **Facility Assets**: 36 building items for replacement planning (roofs, HVAC units, water heaters, generators, bay doors...)
+   - **Facility Checks**: monthly walkthrough results
+   - **Facility Budget**: budget lines by year, station and category
+4. Takes about a minute. Safe to run again: it only adds what's missing. If a column ever goes missing, Info > **Check facilities setup** puts it back.
 
-### 3. Put the Client ID in the app
+Then fill in **Last done** dates on the Schedule tab and **install year, life and cost** on Budget > Buildings so due dates and the replacement forecast work.
 
-Open `index.html`, find this line near the top of the script:
+## How Facilities works
 
-```
-clientId:  '',   // <-- paste the Application (client) ID from Entra here
-```
+### Home
+Critical count, open jobs, overdue and due-soon services, and a big red **Report a problem** button. Lists what needs attention, what's coming due, and which buildings need their monthly walkthrough.
 
-Paste the ID between the quotes, save, upload. (On iPhone: open the file in the GitHub repo, tap the pencil, edit, Commit changes.)
+### Report a problem
+Pick the station, say what's wrong, where, category, and **Critical / Urgent / Routine**. Optional photo. It becomes a work order assigned to Nick. Critical shows "call Dennis now."
 
-If you skip this, the app shows a Setup screen where you can paste the ID on one phone for testing. Every phone would need it, so put it in the file for real use.
+### Work orders
+Filters: Open, Critical, Mine, Waiting, Done, All. Grouped by station, Critical first.
+- **Start**: In Progress
+- **Waiting**: pick Parts / Vendor / Approval / Funding / Weather and add details
+- **Done**: actual cost, date, vendor, what was done. The cost counts against that station's budget.
+- Tap a card for priority, details, assignee (any NCEMS person or a typed vendor name), estimate, vendor, category, notes and photos. Cancel or reopen from there.
+- Photos go to the site's Documents library under `Facilities Photos/WO <number>/`.
 
-### 4. Add one column to the Grounds Tracker list (for type-in assignees)
+### Schedule
+Every recurring service with its own due date, colored by state: red overdue, yellow due in 30 days, gray needs a last done date, green OK.
+- **Done**: date, cost, who did it. Sets the next due date. If there was a cost it's logged as a finished work order so the budget counts it.
+- **Work order**: creates a job for Nick (for things that need a vendor call). Finishing that work order updates the schedule too.
+- Tap a service to edit frequency, vendor, cost, importance, or turn it off. **+ Add** for new ones.
 
-Assigned To is a Person column, so it only takes people in your Microsoft 365. For a vendor or another department, the app saves the typed name to a separate text column. Add it once:
+### Checks
+Monthly walkthrough per building, the same lines as the printed checklist. Each line is **OK** or **Problem**. A Problem needs a short note and is either **Fixed on the spot** or **Needs a work order** (optionally Critical). Answers save on the phone as you go, so a call in the middle doesn't lose anything. Submitting saves the walkthrough and creates the work orders. A building shows as due after 31 days.
 
-1. Open the Grounds Tracker list in SharePoint.
-2. Click **+ Add column** > **Single line of text**.
-3. Name it exactly `AssignedToOther` (one word, no spaces). This sets the internal name the app looks for.
-4. Save. Then open the column settings and rename the display name to `Assigned To (Other)`. The internal name stays the same.
-5. Optional: add it to the list view so you can see it on desktop.
+### Budget
+- **Overview**: pick a year. Budget, spent, committed (open job estimates) and left, by station with a bar, by agency using the cost split, by category, replacements coming due over 5 years, and recent spending.
+- **Plan (next year)**: Dennis's October projection. Grid of category by station. **Fill suggested** puts in scheduled services for the year + replacements due that year + last year's repairs. **Save draft**, then **Submit to the Chief**. Bryce taps **Approve**, which locks it. Approving doesn't spend anything. Bryce can unlock it.
+- **Buildings**: every building item with when it's due for replacement and what it'll cost. Tap to fill in install year, life, cost, condition, make, model, serial.
 
-If the column isn't there, the app still works. The type-in option just says the column is missing.
+Cost split (NCEMS / FD13): Station 51 50/50, 51.5 75/25, 52 100/0, 50 0/100. Change `ncems` in `FSTATIONS` in the script if that changes.
 
-### 5. Install on Tyler's phone
+## Grounds
 
-1. Open the live link in Safari (iPhone) or Chrome (Android).
-2. iPhone: Share > Add to Home Screen. Android: menu > Install app / Add to Home screen.
-3. Open it from the home screen and sign in with his NCEMS Microsoft account. He stays signed in after that.
+Unchanged from Grounds Tracker v1.2, with stations now shown as Station 51, 51.5 and 52. The values stored in the list didn't change, so the alert flow and the Excel log keep working.
 
-## Who can use it
+## Staying current and offline
 
-The app signs in as the person holding the phone. It can only do what that person can already do in SharePoint. Tyler, Dennis, Derek and Doug are members of the Facilities and Grounds team, so they can edit the list. Anyone else gets a "No permission" message.
+Data refreshes when the app opens, every 60 seconds, when you come back to it, and on the refresh button. The last data is kept on the phone, so it opens instantly and still shows everything with no signal. Saving needs signal. If a save fails, the change is put back and a red message says why. SharePoint "busy" responses are retried automatically.
 
-## How it works
+## Alerts
 
-- **This Week**: tasks due in the next 7 days, anything overdue that is still Not Started or In Progress, and anything finished today. Grouped by Station 1, Station 1.5 Admin, Station 2. Everyone / Mine filter (Mine = you are Assigned To or Responsible for Follow-up).
-- **All Tasks**: every task, search box, filter Open / Not done / Done / All.
-- **Colors**: gray Not Started, yellow In Progress, green Done, red Not Completed.
-- **Start** sets TaskStatus = In Progress.
-- **Done** sets TaskStatus = Done and CompletedOn = today.
-- **Not done?** asks for the reason (required, quick-pick buttons or type it), then sets TaskStatus = Not Completed and ReasonNotCompleted.
-- Each of those shows an **Undo** button for 7 seconds in case of a fat-finger tap.
-- **Type-in Assigned To**: in the Assigned To picker, type a name that's not in the list (like `Rain City Gutters` or `Clark County PW`) and tap Assign. It saves to AssignedToOther and clears the Person field. Picking a real person later clears the typed name. No assignment email goes to a typed name, since there's no address to send to.
-- **Details** (tap the task): instructions, frequency, category, change Assigned To and Responsible for Follow-up, add work notes, add photos, set back to Not Started.
-- **Work notes** are added to the top of the WorkNotes column with date, time and name, like `10/07 9:52 AM  Tyler Komm: Mowed front lawn`.
-- **Photos**: shrunk to 1600px JPEG on the phone, then saved to the site's Documents library in `Grounds Tracker Photos/Task <ID>/`. A line goes into WorkNotes saying a photo was added, so it shows in the log. See note below on why.
-- **Staying current**: the app pulls fresh data when it opens, every 60 seconds while it's open, when you come back to it, and when you tap the refresh button. Edits made in SharePoint or by anyone else show up on their own.
-- Last data is kept on the phone, so it opens instantly and still shows the list if signal drops (saving needs signal).
+Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Facilities alerts (Critical work order emails to Doug and Dennis, and a morning overdue digest) are a Power Automate flow on the Facility Work Orders and Facility Services lists. Set up after the lists exist.
 
-## The flow and the log
+## Settings (CONFIG block in index.html)
 
-The app doesn't touch the "Grounds Tracker Alerts" flow. It edits list items the same way a person in SharePoint would, so the flow sees every change: red alerts on Not Completed, assignment emails on Assigned To changes, and a row in "Grounds Tracker Log.xlsx" for each change. "Modified By" will show the person who used the app.
-
-## Known limits
-
-- **Photos aren't list attachments.** Microsoft Graph can't add attachments to SharePoint list items, so photos live in a Documents library folder per task instead. They show up in the app under each task and in the Teams Files tab.
-- **People picker** shows people the SharePoint site already knows (anyone who has opened the site or been assigned before). If someone's missing, have them open the SharePoint site once.
-- If WorkNotes is set to "Append changes to existing text" in SharePoint, tell Doug. The app assumes a normal multi-line column.
-- iOS caches hard. After every new upload, delete the home screen icon and add it again.
-
-## Settings in index.html (CONFIG block)
-
-- `clientId`: from Entra
-- `tenantId`: NCEMS tenant (`153dc089-095e-4a20-8d10-39321a0aca09`)
-- `siteHost` / `sitePath`: the Facilities and Grounds SharePoint site
-- `listId`: `d8b3c948-246c-4371-8b8a-f27f2b1e2cbd`
-- `photoFolder`: `Grounds Tracker Photos`
-- `otherField`: `AssignedToOther` (type-in assignee column)
-- `hubUrl`: back button target (`https://hub.northcountryems.org/`)
+- `clientId`, `tenantId`: Microsoft sign-in
+- `siteHost`, `sitePath`: the Facilities and Grounds site
+- `listId`: Grounds Tracker list
+- `photoFolder`, `facPhotoFolder`: photo folders
+- `managers`, `budgetApprover`, `facilitiesWorker`, `groundsWorker`: role emails
+- `maintTargetPct`: suggested yearly maintenance as a share of replacement value (3%, NRC range is 2 to 4%)
+- `checkEveryDays`: walkthrough due after this many days (31)
 - `refreshSeconds`: 60
 
-If the app ever moves to another URL (like a custom domain), add that exact URL as another SPA redirect URI in Entra > App registrations > NCEMS Grounds Tracker > Authentication.
+## Deploying
+
+Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. iOS caches hard: delete the home screen icon and add it again after every update.
 
 ## Changelog
 
+### v2.0
+- Facilities section: Home, Report a problem, Work orders, Schedule, Checks, Budget (overview, next year plan with Chief approval, building replacement planning)
+- One-tap setup creates the five SharePoint lists and loads 77 services and 36 building items
+- Roles by email: BCs, Chief approves budget, Nick (facilities), Tyler (grounds)
+- Stations renamed 51, 51.5, 52, 50
+- Automatic retry when SharePoint is busy
+- Playwright test (demo mode): 33 checks across Doug, Bryce, Tyler and staff, no page errors
+
 ### v1.2
-- People picker searches everyone in the NCEMS Microsoft 365 directory (type 2+ letters), not just people the SharePoint site already knows. Works for Assigned To and Responsible for Follow-up
-- Picking someone new adds them to the site automatically, then assigns them
-- Needs one extra Entra permission: SharePoint > Delegated > AllSites.Write, with admin consent (see setup)
-- Playwright smoke test (demo mode): directory search, assign new person, no duplicates after adding
+- People picker searches the whole NCEMS directory and adds new people to the site
 
 ### v1.1
-- Assigned To picker: type any name (vendor, other department) and assign it. Saves to the new `AssignedToOther` text column
-- Cards and details show the typed name; search finds it
-- App checks if the column exists and says so if it doesn't
-- Playwright smoke test (demo mode): type-in assign, switch back to a real person, existing vendor task display all pass
+- Type-in Assigned To (vendor or other department)
 
 ### v1.0
-- First build
-- This Week view grouped by station, overdue on top, color by status, summary tiles
-- Start / Done / Not done? buttons with Undo
-- Change Assigned To and Responsible for Follow-up
-- Work notes and photo upload
-- All Tasks view with search and filters
-- Microsoft sign-in (MSAL 3.30, SPA, no secrets) and Microsoft Graph
-- Auto refresh every 60 seconds and on app open
-- Demo mode at `?demo=1`
-- Playwright smoke test (demo mode): Start, Done, Not done with required reason, Mine filter, reassign, add note, add photo, All Tasks view, Setup screen, sign-in redirect URL all pass
+- First build of the Grounds Tracker app
