@@ -332,7 +332,36 @@
   .ok-dot { width:14px; height:14px; border-radius:50%; background:var(--s-done); flex-shrink:0; }
   .ok-dot.no { background:var(--s-nc); } .ok-dot.part { background:var(--s-ip); }
 
+  /* crew to do */
+  .todo-sec { margin:16px 12px 0; }
+  .todo-head { display:flex; align-items:center; justify-content:space-between; padding:0 4px 8px; }
+  .todo-head b { font-size:12px; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; color:var(--g-deep); }
+  .todo-head span { font-size:11px; font-weight:800; color:var(--text-muted); }
+  .todo-sec.red .todo-head b { color:var(--bad); }
+  .todo-box { background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; }
+  .crow { display:flex; align-items:stretch; border-top:1px solid #eef2ee; min-height:76px; }
+  .crow:first-child { border-top:none; }
+  .crow .ck { flex-shrink:0; width:76px; border:none; background:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .crow .ck span { width:46px; height:46px; border-radius:50%; border:3px solid #b9c9b9; display:flex; align-items:center; justify-content:center; background:#fff; transition:transform .1s; }
+  .crow .ck:active span { transform:scale(.9); }
+  .crow .ck svg { width:26px; height:26px; opacity:0; }
+  .crow.done .ck span { background:var(--s-done); border-color:var(--s-done); }
+  .crow.done .ck svg { opacity:1; color:#fff; }
+  .crow.done .ct b { text-decoration:line-through; color:#7d8a7d; }
+  .crow .ct { flex:1; min-width:0; padding:12px 12px 12px 0; cursor:pointer; display:flex; flex-direction:column; justify-content:center; }
+  .crow .ct b { font-size:16px; line-height:1.25; }
+  .crow .ct span { font-size:12px; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+  .crow .ct span.red { color:var(--bad); font-weight:800; }
+  .crow .ct span.amb { color:#8a6200; font-weight:800; }
+  .crow .tag { align-self:center; margin-right:10px; }
+  .crow.crit { background:#fff5f5; }
+  .crow.crit .ck span { border-color:var(--bad); }
+  .caught { text-align:center; padding:26px 16px; }
+  .caught b { display:block; font-size:18px; color:var(--g-mid); letter-spacing:1px; }
+  .caught span { font-size:13px; color:var(--text-muted); }
+
   @media (min-width:720px) {
+    .todo-sec { max-width:760px; margin-left:auto; margin-right:auto; }
     .station, .summary, .chips, .search-wrap, .chk-station, .chk-group, .money-card, .hello, .report-btn, .chk-top { max-width:760px; margin-left:auto; margin-right:auto; }
     .report-btn { width:100%; }
     .sheet { max-width:640px; margin:0 auto; }
@@ -359,8 +388,8 @@
 </header>
 
 <div class="seg" id="seg">
-  <button id="seg-fac" onclick="switchSection('fac')">Facilities</button>
-  <button id="seg-grd" onclick="switchSection('grd')">Grounds</button>
+  <button id="seg-crew" onclick="switchSection('crew')">Crew</button>
+  <button id="seg-admin" onclick="switchSection('admin')">Admin</button>
 </div>
 
 <div class="content" id="content">
@@ -396,6 +425,18 @@
       <div class="center-head"><img src="logo.png" alt=""><h2>Facilities setup</h2></div>
       <div class="center-body" id="facsetup-body">Checking...</div>
     </div>
+  </div>
+
+  <!-- CREW: TO DO -->
+  <div class="page" id="pg-todo">
+    <div class="chips" id="todo-st"></div>
+    <button class="report-btn" onclick="openReport({station: crewStation})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      Report a problem
+    </button>
+    <div class="search-wrap"><input class="search" id="todo-search" placeholder="Find something" oninput="renderTodo()" autocomplete="off"></div>
+    <div id="todo-list"></div>
+    <div class="sync-line" id="sync-todo"></div>
   </div>
 
   <!-- FACILITIES: HOME -->
@@ -510,7 +551,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.0';
+const VERSION = '2.1';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -608,14 +649,15 @@ const SEED = {"services":[["Station 51","HVAC","HVAC service: heating and coolin
 const DEMO = /[?&]demo=1/.test(location.search);
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || '';
 const LS = { cache: 'gt_cache_v1', site: 'gt_site_v1', filter: 'gt_filter_v1', cid: 'gt_clientid_v1',
-  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v2', draft: 'fg_check_draft_v2_' };
+  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_' };
 
 let msalApp = null, account = null;
 let siteId = null;
 let tasks = [];
 let people = [], peopleById = {}, myLookupId = null;
-let weekFilter = 'all', allFilter = 'open';
-let section = 'fac', curTab = 'home';
+let weekFilter = 'all', allFilter = 'week';
+let section = 'crew', curTab = 'todo';
+let crewStation = '';
 let lastSync = null, syncErr = '', facErr = '';
 let busy = false;
 let sheet = null;                 // {kind, id}
@@ -939,7 +981,7 @@ async function renderFacSetup() {
     return;
   }
   if (!isManager()) {
-    b.innerHTML = 'Facilities hasn\'t been set up on SharePoint yet. A Battalion Chief needs to open the app once to set it up.<br><br>Grounds works now: tap <b>Grounds</b> at the top.';
+    b.innerHTML = 'Facilities hasn\'t been set up on SharePoint yet. A Battalion Chief needs to open the app once to set it up.';
     return;
   }
   b.innerHTML = 'Checking lists...';
@@ -959,7 +1001,7 @@ async function renderFacSetup() {
     '<div class="small-note" id="setup-msg">Takes about a minute. Safe to run again: it only adds what\'s missing.</div>' +
     (facIds && FAC_KEYS.every(k => facIds[k]) ? '<button class="big-btn ghost" onclick="retryFac()">Back to Facilities</button>' : '');
 }
-function retryFac() { facCheck().then(() => { if (facState === 'ready') { refresh(true); switchSection('fac'); } else renderFacSetup(); }); }
+function retryFac() { facCheck().then(() => { if (facState === 'ready') { refresh(true); switchTab('home'); } else renderFacSetup(); }); }
 async function runFacSetup() {
   const btn = $('setup-go'), msg = $('setup-msg');
   btn.disabled = true;
@@ -992,7 +1034,7 @@ async function runFacSetup() {
     say('Done.');
     toast('Facilities is set up');
     await refresh(false);
-    switchSection('fac');
+    switchSection('admin');
   } catch (e) {
     toast('Setup stopped: ' + (e.message || e), { err: true, ms: 9000 });
     say('Setup stopped: ' + (e.message || e) + '. Fix that and tap the button again.');
@@ -1125,56 +1167,63 @@ function startAutoRefresh() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !checkStation && (!lastSync || Date.now() - lastSync > 15000)) refresh(false); });
 }
 
-/* ================= shell: sections, tabs, pages ================= */
+/* ================= shell: Crew / Admin, tabs, pages ================= */
 const ICONS = {
   home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
   wo: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
   sched: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14l2.5 2.5L16 12"/>',
   checks: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   money: '<path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-  week: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
-  all: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>'
+  todo: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9"/>',
+  grd: '<path d="M12 22V12"/><path d="M12 12C12 7 8 4 3 4c0 5 4 8 9 8z"/><path d="M12 15c0-4 3-7 8-7 0 4-3 7-8 7z"/>'
 };
-const TABS = { fac: [['home', 'Home'], ['wo', 'Work'], ['sched', 'Schedule'], ['checks', 'Checks'], ['money', 'Budget']], grd: [['week', 'This Week'], ['all', 'All Tasks']] };
+const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']],
+               admin: [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']] };
+const FAC_TABS = ['home', 'wo', 'sched', 'money'];
+const PAGE_OF = { grd: 'all' };
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   $('pg-' + name).classList.add('active');
-  const tabbed = ['home', 'wo', 'sched', 'checks', 'money', 'week', 'all'].indexOf(name) >= 0;
-  document.body.classList.toggle('no-tabs', !tabbed && name !== 'facsetup');
-  document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0);
-  $('refresh-btn').style.display = (tabbed || name === 'facsetup') ? '' : 'none';
+  const tabbed = ['todo', 'home', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
+  document.body.classList.toggle('no-tabs', !tabbed);
+  document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0 || !isManager());
+  $('refresh-btn').style.display = tabbed ? '' : 'none';
   $('chk-progress').classList.toggle('show', name === 'checks' && !!checkStation);
 }
 function renderTabbar() {
-  const badges = section === 'fac' ? { home: fac.wo.filter(w => woOpen(w) && w.priority === 'Critical').length, sched: fac.svc.filter(s => s.active && svcState(s) === 'over').length } : {};
+  let badges = {};
+  if (section === 'admin') badges = { home: fac.wo.filter(w => woOpen(w) && w.priority === 'Critical').length, sched: fac.svc.filter(s => s.active && svcState(s) === 'over').length,
+    grd: tasks.filter(t => isOverdue(t) || t.status === ST.NC).length };
+  else badges = { todo: todoItems().filter(x => !x.done).length, checks: FSTATIONS.filter(s => (!crewStation || s.key === crewStation) && facState === 'ready' && checkState(s.key).state === 'due').length };
   $('tabbar').innerHTML = TABS[section].map(t => '<button class="tab' + (t[0] === curTab ? ' active' : '') + '" onclick="switchTab(\'' + t[0] + '\')">' +
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[t[0]] + '</svg>' +
     '<span class="tab-lbl">' + t[1] + '</span>' + (badges[t[0]] ? '<span class="badge">' + badges[t[0]] + '</span>' : '') + '</button>').join('');
 }
 function switchSection(s) {
-  if (s !== section) { leaveCheck(); }
+  if (s === 'admin' && !isManager()) s = 'crew';
+  if (s !== section) leaveCheck();
   section = s; lsSet(LS.section, s);
-  $('seg-fac').classList.toggle('on', s === 'fac'); $('seg-grd').classList.toggle('on', s === 'grd');
-  $('hdr-title').textContent = s === 'fac' ? 'Facilities' : 'Grounds Tracker';
-  curTab = s === 'fac' ? 'home' : 'week';
-  if (s === 'fac' && facState !== 'ready') { showPage('facsetup'); renderTabbar(); document.body.classList.add('no-tabs'); renderFacSetup(); return; }
-  switchTab(curTab);
+  $('seg-crew').classList.toggle('on', s === 'crew'); $('seg-admin').classList.toggle('on', s === 'admin');
+  $('hdr-title').textContent = s === 'crew' ? 'Facilities & Grounds' : 'F&G Admin';
+  switchTab(s === 'crew' ? 'todo' : 'home');
 }
 function switchTab(t) {
   if (t !== 'checks') leaveCheck();
   curTab = t;
-  showPage(t);
+  if (section === 'admin' && FAC_TABS.indexOf(t) >= 0 && facState !== 'ready') { showPage('facsetup'); renderTabbar(); renderFacSetup(); return; }
+  showPage(PAGE_OF[t] || t);
   render();
   $('content').scrollTop = 0;
 }
 function render() {
   renderTabbar();
-  if (section === 'grd') { if (curTab === 'week') renderWeek(); else renderAll(); }
-  else if (facState === 'ready') {
-    ({ home: renderHome, wo: renderWo, sched: renderSched, checks: renderChecks, money: renderMoney })[curTab]();
-  }
+  const pageActive = id => $('pg-' + id).classList.contains('active');
+  if (curTab === 'todo') renderTodo();
+  else if (curTab === 'checks') renderChecks();
+  else if (curTab === 'grd') renderAll();
+  else if (facState === 'ready' && FAC_TABS.indexOf(curTab) >= 0 && pageActive(curTab)) ({ home: renderHome, wo: renderWo, sched: renderSched, money: renderMoney })[curTab]();
   const s = lastSync ? 'Updated ' + timeStr(lastSync) : '';
-  ['sync-week', 'sync-all', 'sync-home', 'sync-wo', 'sync-sched', 'sync-money'].forEach(id => {
+  ['sync-todo', 'sync-all', 'sync-home', 'sync-wo', 'sync-sched', 'sync-money'].forEach(id => {
     const el = $(id); if (!el) return;
     el.className = 'sync-line' + (syncErr ? ' err' : '');
     el.textContent = syncErr ? 'Could not update: ' + syncErr + (s ? ' · showing data from ' + timeStr(lastSync) : '') : s + (s ? ' · ' : '') + 'auto refresh every ' + CONFIG.refreshSeconds + 's';
@@ -1239,9 +1288,10 @@ function renderWeek() {
   $('week-list').innerHTML = stationGroups(list, empty);
 }
 function renderAll() {
-  $('all-chips').innerHTML = chipHtml([['open', 'Open'], ['nc', 'Not done'], ['done', 'Done'], ['all', 'All']], allFilter, 'setAllFilter');
+  const nOver = tasks.filter(isOverdue).length, nNc = tasks.filter(t => t.status === ST.NC).length;
+  $('all-chips').innerHTML = chipHtml([['week', 'This week'], ['late', 'Late or not done (' + (nOver + nNc) + ')'], ['open', 'Open'], ['done', 'Done'], ['all', 'All']], allFilter, 'setAllFilter');
   const q = ($('all-search').value || '').trim().toLowerCase();
-  let list = tasks.filter(t => allFilter === 'open' ? isOpen(t) : allFilter === 'done' ? t.status === ST.DONE : allFilter === 'nc' ? t.status === ST.NC : true);
+  let list = tasks.filter(t => allFilter === 'week' ? inWeek(t) : allFilter === 'late' ? (isOverdue(t) || t.status === ST.NC) : allFilter === 'open' ? isOpen(t) : allFilter === 'done' ? t.status === ST.DONE : true);
   if (q) list = list.filter(t => (t.title + ' ' + t.category + ' ' + t.station + ' ' + assigneeLabel(t)).toLowerCase().includes(q));
   $('all-list').innerHTML = stationGroups(list, 'No tasks match');
 }
@@ -1592,6 +1642,7 @@ function renderHome() {
   if (needChk.length) h += '<div class="section-label">Monthly walkthrough due</div>' + needChk.map(stationCheckRow).join('');
   const needDates = active.filter(s => svcState(s) === 'need').length;
   if (needDates && canEditPlans()) h += '<div class="section-label">Getting started</div>' + emptyBox(needDates + ' scheduled services still need a "last done" date. Open Schedule, tap a service, and fill it in so the due dates work.');
+  h += homeGroundsHtml();
   $('home-lists').innerHTML = h;
 }
 
@@ -1902,6 +1953,87 @@ async function saveNewAsset() {
 }
 </script>
 <script>
+/* ================= CREW: one To Do list for facilities + grounds ================= */
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function setCrewStation(k) { crewStation = k; lsSet(LS.crewSt, k); render(); $('content').scrollTop = 0; }
+function grdStationKey(t) { const s = stationOf(t.station); return s ? s.name : (t.station || ''); }
+function atStation(key) { return !crewStation || key === crewStation; }
+function todoItems() {
+  const out = [], today = new Date();
+  const facOk = facState === 'ready';
+  if (facOk) {
+    fac.wo.forEach(w => {
+      if (!atStation(w.station)) return;
+      const doneToday = w.status === WOS.DONE && w.dateDone && sameDay(w.dateDone, today);
+      if (!woOpen(w) && !doneToday) return;
+      const sec = w.priority === 'Routine' ? 'jobs' : 'fix';
+      const bits = [w.station, w.location || w.category, w.status !== WOS.OPEN ? w.status : '', w.assignedId || w.assignedOther ? 'To: ' + woAssignee(w) : ''].filter(Boolean);
+      out.push({ kind: 'wo', id: w.id, sec, title: w.title, meta: bits.join(' · '), metaCls: '', done: doneToday, crit: w.priority === 'Critical' && !doneToday,
+        tag: w.priority === 'Routine' ? '' : '<span class="pill ' + prioCls(w.priority) + ' tag">' + esc(w.priority) + '</span>', sort: PRANK[w.priority] * 1e13 + (w.created ? w.created.getTime() : 0) });
+    });
+    fac.svc.filter(s => s.active && atStation(s.station)).forEach(s => {
+      const st = svcState(s), doneToday = s.lastDone && sameDay(s.lastDone, today);
+      if (st !== 'over' && st !== 'soon' && !doneToday) return;
+      const lab = doneToday ? { text: 'Done today', cls: '' } : svcLabel(s);
+      out.push({ kind: 'svc', id: s.id, sec: 'svc', title: s.title, meta: s.station + ' · ' + lab.text + (s.vendor ? ' · ' + s.vendor : ''), metaCls: st === 'over' && !doneToday ? 'red' : st === 'soon' ? 'amb' : '',
+        done: !!doneToday, crit: false, tag: s.importance === 'High' ? '<span class="pill hi tag">High</span>' : '', sort: (svcNext(s) || today).getTime() });
+    });
+  }
+  tasks.forEach(t => {
+    const key = grdStationKey(t);
+    if (!atStation(key) || !inWeek(t)) return;
+    const due = dueLabel(t), done = t.status === ST.DONE;
+    out.push({ kind: 'grd', id: t.id, sec: 'grd', title: t.title, meta: key + ' · ' + (t.status === ST.NC ? 'Not done: ' + t.reason : due.text) + (t.status === ST.IP ? ' · In progress' : ''),
+      metaCls: t.status === ST.NC || due.cls === 'due-over' ? 'red' : '', done, crit: false, tag: '', sort: (t.due ? t.due.getTime() : 0) });
+  });
+  const q = (($('todo-search') && $('todo-search').value) || '').trim().toLowerCase();
+  return q ? out.filter(x => (x.title + ' ' + x.meta).toLowerCase().includes(q)) : out;
+}
+function todoRow(x) {
+  return '<div class="crow' + (x.done ? ' done' : '') + (x.crit ? ' crit' : '') + '">' +
+    '<button class="ck" aria-label="' + (x.done ? 'Undo' : 'Mark done') + '" onclick="todoCheck(\'' + x.kind + '\',\'' + x.id + '\',' + (x.done ? 1 : 0) + ')"><span>' + CHECK_SVG + '</span></button>' +
+    '<div class="ct" onclick="openSheet(\'' + x.kind + '\',\'' + x.id + '\')"><b>' + esc(x.title) + '</b><span class="' + x.metaCls + '">' + esc(x.meta) + '</span></div>' + (x.tag || '') + '</div>';
+}
+function todoCheck(kind, id, wasDone) {
+  if (kind === 'grd') { if (wasDone) doReset(id); else doDone(id); return; }
+  if (kind === 'wo') { if (wasDone) woReopen(id); else woDone(id); return; }
+  if (kind === 'svc') { if (wasDone) { toast('Already done today. Open it to change the date.'); return; } svcDone(id); }
+}
+function renderTodo() {
+  $('todo-st').innerHTML = chipHtml([['', 'All']].concat(FSTATIONS.map(s => [s.key, s.key.replace('Station ', 'Sta ')])), crewStation, 'setCrewStation');
+  const items = todoItems();
+  const SECS = [['fix', 'Fix it now', 'red'], ['grd', 'Grounds this week', ''], ['svc', 'Building services due', ''], ['jobs', 'Other repairs', '']];
+  let h = '';
+  SECS.forEach(([k, label, cls]) => {
+    const list = items.filter(x => x.sec === k).sort((a, b) => (a.done - b.done) || (a.sort - b.sort));
+    if (!list.length) return;
+    const left = list.filter(x => !x.done).length;
+    h += '<div class="todo-sec ' + cls + '"><div class="todo-head"><b>' + label + '</b><span>' + (left ? left + ' to do' : 'all done') + '</span></div><div class="todo-box">' + list.map(todoRow).join('') + '</div></div>';
+  });
+  if (facState === 'ready') {
+    const due = FSTATIONS.filter(s => atStation(s.key) && checkState(s.key).state !== 'ok');
+    if (due.length) h += '<div class="todo-sec"><div class="todo-head"><b>Monthly walkthrough</b><span>' + due.length + ' due</span></div></div>' + due.map(stationCheckRow).join('');
+  }
+  if (!h) h = '<div class="todo-sec"><div class="todo-box caught"><b>All caught up</b><span>Nothing due ' + (crewStation ? 'at ' + esc(crewStation) + ' ' : '') + 'right now. See something broken? Report it.</span></div></div>';
+  if (facState !== 'ready' && !DEMO) h += '<div class="small-note" style="text-align:center;padding:10px 20px">Building repairs and services show up here once a Battalion Chief finishes Facilities setup.</div>';
+  $('todo-list').innerHTML = h;
+}
+
+/* ================= ADMIN overview: grounds part ================= */
+function homeGroundsHtml() {
+  const wk = tasks.filter(inWeek);
+  const late = tasks.filter(t => isOverdue(t) || t.status === ST.NC).sort(sortTasks);
+  let h = '<div class="section-label">Grounds</div><div class="summary" style="padding-top:0">' +
+    '<div class="sum od tap" onclick="allFilter=\'late\';switchTab(\'grd\')"><b>' + tasks.filter(isOverdue).length + '</b><span>Overdue</span></div>' +
+    '<div class="sum od tap" onclick="allFilter=\'late\';switchTab(\'grd\')"><b>' + tasks.filter(t => t.status === ST.NC).length + '</b><span>Not done</span></div>' +
+    '<div class="sum tap" onclick="allFilter=\'week\';switchTab(\'grd\')"><b>' + wk.filter(isOpen).length + '</b><span>Open wk</span></div>' +
+    '<div class="sum dn tap" onclick="allFilter=\'week\';switchTab(\'grd\')"><b>' + wk.filter(t => t.status === ST.DONE).length + '</b><span>Done wk</span></div></div>';
+  if (late.length) h += '<div class="wrap" style="margin-top:10px"><div class="st-body" style="border-radius:12px">' + late.slice(0, 5).map(cardHtml).join('') + '</div></div>' +
+    (late.length > 5 ? '<button class="big-btn ghost" style="margin:10px 12px 0;width:calc(100% - 24px)" onclick="allFilter=\'late\';switchTab(\'grd\')">See all ' + late.length + '</button>' : '');
+  return h;
+}
+</script>
+<script>
 /* ================= CHECKS (monthly walkthrough) ================= */
 function checkGroups(stKey) { const s = fst(stKey); return WALK.concat([s && s.bays ? WALK_BAYS : WALK_MOD]); }
 function lastCheck(stKey) { return fac.chk.filter(c => c.station === stKey).sort((a, b) => (b.date || 0) - (a.date || 0))[0] || null; }
@@ -1918,10 +2050,12 @@ function stationCheckRow(s) {
     '<div class="go">' + (cs.state === 'draft' ? 'Resume' : cs.state === 'due' ? 'Due' : 'Start') + ' &rsaquo;</div></div>';
 }
 function renderChecks() {
+  if (facState !== 'ready') { $('chk-progress').classList.remove('show'); $('checks-body').innerHTML = emptyBox('Walkthroughs start once a Battalion Chief finishes Facilities setup.'); return; }
   if (checkStation) { renderCheckForm(); return; }
   $('chk-progress').classList.remove('show');
   const recent = fac.chk.slice().sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 8);
-  $('checks-body').innerHTML = '<div class="section-label">Monthly walkthrough</div>' + FSTATIONS.map(stationCheckRow).join('') +
+  const order = FSTATIONS.slice().sort((a, b) => (b.key === crewStation) - (a.key === crewStation));
+  $('checks-body').innerHTML = '<div class="section-label">Monthly walkthrough</div>' + order.map(stationCheckRow).join('') +
     '<div class="small-note" style="padding:6px 18px">About 15 minutes per building. Mark each line OK or Problem. Problems become work orders when you submit.</div>' +
     '<div class="section-label">Recent</div>' + (recent.length ? '<div class="wrap"><div class="st-body" style="border-radius:12px">' + recent.map(c =>
       '<div class="asset-row" style="cursor:default"><div class="an"><b>' + esc(c.station) + ' &middot; ' + (c.date ? mdy(c.date) : '') + '</b><span>' + esc(c.by) + '</span></div><div class="ay ' + (c.problems ? 'amb' : '') + '">' + (c.problems ? c.problems + ' problem' + (c.problems > 1 ? 's' : '') : 'All OK') + '</div></div>').join('') + '</div></div>' : emptyBox('No walkthroughs yet'));
@@ -2157,7 +2291,7 @@ function openInfo() {
     '<div class="info-line">Signed in as:<br><b>' + who + '</b></div>' +
     '<div class="info-line" style="font-size:12px;color:#555">Critical problems: save the work order, then call Dennis. The app refreshes every ' + CONFIG.refreshSeconds + ' seconds and when you open it.</div>' +
     '<div class="info-line" style="font-size:12px;color:#555">Questions? Contact Doug: <a href="mailto:d.boyce@northcountryems.org?subject=FACILITIES%20APP">d.boyce@northcountryems.org</a></div>' +
-    (isManager() && !DEMO ? '<button class="big-btn ghost" onclick="closeInfo();facState=\'missing\';switchSection(\'fac\')">Check facilities setup</button>' : '') +
+    (isManager() && !DEMO ? '<button class="big-btn ghost" onclick="closeInfo();facState=\'missing\';switchSection(\'admin\')">Check facilities setup</button>' : '') +
     (account ? '<button class="big-btn red" onclick="signOut()">Sign out</button>' : '');
   $('info-ov').classList.add('show');
 }
@@ -2167,7 +2301,8 @@ function saveSetup() { const v = $('setup-cid').value.trim(); if (!/^[0-9a-f-]{3
 async function boot() {
   $('hub-link').href = CONFIG.hubUrl;
   weekFilter = lsGet(LS.filter, 'all');
-  const startSection = () => { const saved = lsGet(LS.section, null); return saved || (isGroundsWorker() ? 'grd' : 'fac'); };
+  crewStation = lsGet(LS.crewSt, '');
+  const startSection = () => isManager() ? (lsGet(LS.section, 'admin') === 'crew' ? 'crew' : 'admin') : 'crew';
   if (DEMO) {
     setupDemo();
     facState = 'ready';
@@ -2182,7 +2317,7 @@ async function boot() {
   switchSection(startSection());
   await getSiteId().catch(() => {});
   await facCheck();
-  if (section === 'fac') switchSection('fac');
+  if (section === 'admin') switchTab(curTab); else render();
   await refresh(false);
   startAutoRefresh();
 }

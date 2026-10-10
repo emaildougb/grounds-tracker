@@ -7,7 +7,7 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.0**
+**Version 2.1**
 
 ## Links
 
@@ -26,26 +26,28 @@ The URL stayed the same so Tyler's home screen icon, the Microsoft sign-in setup
 - `logo.png`, `apple-touch-icon.png` (icons)
 - `README.md` (this file)
 
-## Who sees what
+## Crew and Admin
 
-Roles come from the email addresses in `CONFIG` at the top of the script.
+The app has two sides. The switch at the top only shows for BCs and the Chief.
 
-| Person | Role | Starts on | Can do |
-|---|---|---|---|
-| Doug, Dennis, Derek | Battalion Chief | Facilities | Everything, including building next year's budget |
-| Bryce | Chief | Facilities | Everything, plus **Approve** the budget |
-| Nick Stafford | Facilities | Facilities | Work orders, schedule, checks, building items. Sees the budget, can't change it |
-| Tyler Komm | Grounds | Grounds | Grounds tasks. Can open Facilities too |
-| Anyone else on the site | Staff | Facilities | Report a problem, see everything, update work orders |
+- **Crew** (Tyler, Nick, crews): one **To Do** list per station, with a big circle to tap on each item. It mixes grounds tasks this week, repairs (Critical and Urgent first under "Fix it now"), building services coming due, and the monthly walkthrough. Tap the circle to finish it, tap the words to open details, notes and photos. Station chips at the top remember your choice. Big red **Report a problem** button. Second tab: **Walkthrough**.
+- **Admin** (BCs and Bryce): **Overview** (facilities and grounds counts, what needs attention), **Work** (all work orders), **Schedule**, **Grounds** (every grounds task: this week, late or not done, open, done), **Budget**.
 
-The app only does what the person's SharePoint permissions allow. Nick and anyone else who works in it need to be **members** of the Facilities and Grounds team.
+| Person | Sees | Extra |
+|---|---|---|
+| Doug, Dennis, Derek | Admin (can flip to Crew) | Builds next year's budget |
+| Bryce | Admin (can flip to Crew) | **Approves** the budget |
+| Nick Stafford | Crew | Can edit the schedule and building items |
+| Tyler Komm and everyone else | Crew | |
+
+Roles come from the email addresses in `CONFIG`. The app only does what the person's SharePoint permissions allow, so anyone who uses it needs to be a **member** of the Facilities and Grounds team.
 
 ## First time setup (once, by a BC)
 
 No new Microsoft Entra steps. The app uses the same registration as the Grounds Tracker (Sites.ReadWrite.All and AllSites.Write, already consented).
 
 1. Open the app and sign in as a BC.
-2. Tap **Facilities**. The app says Facilities isn't set up yet.
+2. You land on **Admin**. The app says Facilities isn't set up yet.
 3. Tap **Set up Facilities**. It creates five SharePoint lists on the site and loads the starter data:
    - **Facility Work Orders**: repairs and jobs
    - **Facility Services**: 77 scheduled services across the four stations (fire alarm, extinguishers, HVAC, generator, backflow, bay doors...)
@@ -116,6 +118,12 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. iOS caches hard: delete the home screen icon and add it again after every update.
 
 ## Changelog
+
+### v2.1
+- Split into **Crew** (one To Do list per station with big check-offs, walkthrough, report button) and **Admin** (overview, work, schedule, grounds, budget)
+- Only BCs and the Chief see Admin
+- Admin Grounds tab: This week, Late or not done, Open, Done, All
+- Playwright test (demo mode): 40 checks across Doug, Bryce, Nick, Tyler and staff, no page errors
 
 ### v2.0
 - Facilities section: Home, Report a problem, Work orders, Schedule, Checks, Budget (overview, next year plan with Chief approval, building replacement planning)
