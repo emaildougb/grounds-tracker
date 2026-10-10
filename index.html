@@ -368,8 +368,77 @@
     .hdr-text h1 { font-size:20px; }
     .seg { justify-content:center; } .seg button { max-width:240px; }
   }
+
+  /* dashboard */
+  .dtop { display:flex; align-items:center; gap:12px; margin:14px 12px 0; }
+  .dtop b { display:block; font-size:18px; color:var(--g-deep); }
+  .dtop span { font-size:12px; color:var(--text-muted); }
+  .dprint { margin-left:auto; border:2px solid var(--border); background:#fff; color:var(--g-deep); border-radius:10px; padding:9px 12px; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; }
+  .dkpis { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 12px 0; }
+  .dkpi { background:#fff; border-radius:12px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.07); border-left:6px solid var(--g-accent); }
+  .dkpi.tap { cursor:pointer; } .dkpi.bad { border-left-color:var(--bad); } .dkpi.warn { border-left-color:var(--warn); }
+  .dkpi b { display:block; font-size:28px; font-weight:800; line-height:1.05; color:var(--text); }
+  .dkpi span { display:block; font-size:10px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); margin-top:4px; }
+  .dkpi i { display:block; font-style:normal; font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .dkpi.bad i { color:var(--bad); font-weight:700; }
+  .dgrid2 { display:grid; grid-template-columns:1fr; gap:12px; margin:12px 12px 0; }
+  .dcard { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); overflow:hidden; break-inside:avoid; }
+  .dch { padding:12px 14px 4px; display:flex; align-items:baseline; gap:8px; }
+  .dch b { font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--g-deep); }
+  .dch span { margin-left:auto; font-size:11px; color:var(--text-muted); }
+  .dcb { padding:8px 14px 14px; }
+  .dempty { font-size:13px; color:var(--text-muted); padding:10px 0; }
+  .dnote { font-size:11px; color:var(--text-muted); margin-top:8px; } .dnote.bad { color:var(--bad); font-weight:800; }
+  .dstack { display:flex; gap:2px; height:22px; border-radius:6px; overflow:hidden; background:#fff; }
+  .dstack div { min-width:4px; }
+  .dleg { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-size:12px; color:var(--text-muted); }
+  .dleg span { display:inline-flex; align-items:center; gap:6px; } .dleg b { color:var(--text); }
+  .dleg i { width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .drows { display:flex; flex-direction:column; gap:9px; }
+  .drow { display:grid; grid-template-columns:104px 1fr 52px; align-items:center; gap:8px; font-size:12px; }
+  .drow .dl { font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .drow .dv { text-align:right; font-weight:800; }
+  .dtrack { display:flex; gap:2px; height:14px; background:#eef2ee; border-radius:4px; overflow:hidden; }
+  .dtrack div { height:100%; } .dtrack div:last-child { border-radius:0 4px 4px 0; }
+  .dbud { margin-bottom:10px; } .dbt { display:flex; justify-content:space-between; font-size:12px; font-weight:700; }
+  .dbt em { font-style:normal; color:var(--text-muted); font-weight:600; }
+  .dsvg { width:100%; height:auto; display:block; max-height:240px; }
+  .dgrid { stroke:#e7ece7; stroke-width:1; } .dbase { stroke:#c9d4c9; stroke-width:1; }
+  .dax { font-size:13px; fill:#6b756b; text-anchor:middle; font-family:inherit; }
+  .dvl { font-size:13px; fill:#1A1A1A; font-weight:800; text-anchor:middle; font-family:inherit; }
+  .dwalk { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .dwalk div { border-radius:10px; padding:10px 6px; text-align:center; background:var(--s-done-bg); }
+  .dwalk div.due { background:var(--s-nc-bg); }
+  .dwalk b { display:block; font-size:18px; color:var(--g-deep); } .dwalk div.due b { color:var(--bad); }
+  .dwalk span { font-size:11px; color:var(--text-muted); }
+  .dli { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; padding:9px 0; border-bottom:1px solid #eef2ee; cursor:pointer; font-size:13px; }
+  .dli:last-child { border-bottom:none; } .dli b { flex:1; min-width:60%; } .dli em { width:100%; font-style:normal; font-size:11px; color:var(--text-muted); }
+  .dfoot { text-align:center; font-size:11px; color:var(--text-muted); padding:16px 12px 4px; }
+  .dash-tip { position:fixed; z-index:90; display:none; pointer-events:none; background:#1A1A1A; color:#fff; font-size:12px; font-weight:700; padding:6px 9px; border-radius:6px; max-width:260px; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  @media (min-width:720px) {
+    .dtop, .dkpis, .dgrid2 { max-width:1080px; margin-left:auto; margin-right:auto; }
+    .dkpis { grid-template-columns:repeat(4,1fr); }
+    .dgrid2 { grid-template-columns:1fr 1fr; }
+  }
+  @media print {
+    @page { margin:12mm; }
+    .hdr, .seg, .tabbar, .dprint, .sync-line, .demo-flag, .toast, .dash-tip { display:none !important; }
+    body.no-tabs .content, .content { position:static !important; overflow:visible !important; height:auto !important; padding:0 !important; }
+    html, body { background:#fff !important; height:auto !important; overflow:visible !important; }
+    .page { display:none !important; } #pg-dash.active { display:block !important; }
+    .dtop, .dkpis, .dgrid2 { max-width:none; margin-left:0; margin-right:0; }
+    .dkpis { grid-template-columns:repeat(4,1fr); } .dgrid2 { grid-template-columns:1fr 1fr; }
+    .dcard, .dkpi { box-shadow:none; border:1px solid #d8e0d8; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+
+  .desk-note { margin:12px 12px 0; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:var(--s-wait-bg); color:var(--info); font-size:12px; line-height:1.35; }
+  .desk-note b { color:var(--info); }
+  .desk-note button { margin-left:auto; flex:none; border:2px solid var(--info); background:#fff; color:var(--info); border-radius:8px; padding:7px 10px; font-weight:800; font-size:11px; cursor:pointer; }
+  .desk-slot:empty { display:none; }
 </style>
 </head>
+
 <body class="no-tabs no-seg">
 
 <header class="hdr">
@@ -441,6 +510,7 @@
 
   <!-- FACILITIES: HOME -->
   <div class="page" id="pg-home">
+    <div class="desk-slot"></div>
     <div class="hello" id="hello"></div>
     <button class="report-btn" onclick="openReport()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
@@ -451,8 +521,15 @@
     <div class="sync-line" id="sync-home"></div>
   </div>
 
+  <!-- ADMIN: DASHBOARD -->
+  <div class="page" id="pg-dash">
+    <div id="dash-body"></div>
+    <div class="sync-line" id="sync-dash"></div>
+  </div>
+
   <!-- FACILITIES: WORK ORDERS -->
   <div class="page" id="pg-wo">
+    <div class="desk-slot"></div>
     <div class="search-wrap"><input class="search" id="wo-search" placeholder="Search work orders" oninput="renderWo()" autocomplete="off"></div>
     <div class="chips" id="wo-chips"></div>
     <div id="wo-list"></div>
@@ -461,6 +538,7 @@
 
   <!-- FACILITIES: SCHEDULE -->
   <div class="page" id="pg-sched">
+    <div class="desk-slot"></div>
     <div class="search-wrap"><input class="search" id="sc-search" placeholder="Search services" oninput="renderSched()" autocomplete="off"></div>
     <div class="chips" id="sc-chips"></div>
     <div class="summary" id="sc-summary"></div>
@@ -475,6 +553,7 @@
 
   <!-- FACILITIES: MONEY -->
   <div class="page" id="pg-money">
+    <div class="desk-slot"></div>
     <div class="chips" id="money-chips"></div>
     <div id="money-body"></div>
     <div class="sync-line" id="sync-money"></div>
@@ -490,6 +569,7 @@
 
   <!-- GROUNDS: ALL TASKS -->
   <div class="page" id="pg-all">
+    <div class="desk-slot"></div>
     <div class="search-wrap"><input class="search" id="all-search" placeholder="Search tasks" oninput="renderAll()" autocomplete="off"></div>
     <div class="chips" id="all-chips"></div>
     <div id="all-list"></div>
@@ -538,9 +618,11 @@
   </div>
 </div>
 
+<div class="dash-tip" id="dash-tip"></div>
 <div class="lightbox" id="lightbox" onclick="this.classList.remove('show')"><img id="lightbox-img" alt=""></div>
 <input type="file" id="photo-in" accept="image/*" style="display:none" onchange="photoPicked(this)">
 <div class="toast" id="toast"><div class="toast-msg" id="toast-msg"></div><button class="toast-act" id="toast-act" style="display:none"></button></div>
+
 <script>
 /* ============================================================
    NCEMS Facilities and Grounds  v2.0
@@ -551,7 +633,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.1';
+const VERSION = '2.2';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -647,6 +729,7 @@ const WALK_MOD = { g: 'Modular building', cat: 'Roof and exterior', items: ['Ski
 const SEED = {"services":[["Station 51","HVAC","HVAC service: heating and cooling check","Every 6 months","High","Spring and fall."],["Station 51","HVAC","Apparatus bay exhaust system: service","Annual","High","Vehicle exhaust capture. Confirm which bays have one."],["Station 51","Fire and life safety","Fire extinguishers: annual inspection and tag","Annual","High",""],["Station 51","Fire and life safety","Fire alarm system: annual inspection and test","Annual","High","Confirm each building has a monitored alarm."],["Station 51","Fire and life safety","Smoke and CO detectors: test, replace batteries","Every 6 months","High",""],["Station 51","Fire and life safety","Fire sprinkler system: annual inspection","Annual","High","Confirm which buildings have sprinklers."],["Station 51","Electrical and generator","Generator: annual service by vendor","Annual","High","Monthly run test is on the Grounds Tracker."],["Station 51","Doors and bays","Bay doors and openers: service and safety check","Annual","High",""],["Station 51","Interior","Dryer vent and lint duct: clean","Every 6 months","High","Fire risk. Include gear dryer if there is one."],["Station 51","HVAC","HVAC filters: replace","Quarterly","Moderate",""],["Station 51","HVAC","AC drain line and drip pan: clear and check","Annual","Moderate","Before cooling season."],["Station 51","Fire and life safety","Emergency and exit lights: 90 minute test","Annual","Moderate","Monthly 30 second push test can live with Tyler's routine list."],["Station 51","Electrical and generator","GFCI outlets: push test and reset","Every 6 months","Moderate",""],["Station 51","Plumbing and water","Backflow assembly: annual test","Annual","Moderate","Required yearly by the water purveyor."],["Station 51","Plumbing and water","Water heater: flush and check","Annual","Moderate",""],["Station 51","Plumbing and water","Septic tank: inspect and pump as needed","Every 3 years","Moderate","Delete if the building is on sewer."],["Station 51","Plumbing and water","Water heater relief valve: test","Annual","Moderate","Do it with the flush."],["Station 51","Roof and exterior","Roof and gutters: inspection","Annual","Moderate","Fall, before the rain."],["Station 51","Pest control","Pest control service","Quarterly","Moderate",""],["Station 51","Roof and exterior","Windows and exterior doors: seals and caulking","Annual","Low",""],["Station 51","Interior","Kitchen: fridge coils, range hood filter, dishwasher filter","Every 6 months","Low",""],["Station 51.5","HVAC","HVAC service: heating and cooling check","Every 6 months","High","Spring and fall."],["Station 51.5","Fire and life safety","Fire extinguishers: annual inspection and tag","Annual","High",""],["Station 51.5","Fire and life safety","Fire alarm system: annual inspection and test","Annual","High","Confirm each building has a monitored alarm."],["Station 51.5","Fire and life safety","Smoke and CO detectors: test, replace batteries","Every 6 months","High",""],["Station 51.5","HVAC","HVAC filters: replace","Quarterly","Moderate",""],["Station 51.5","HVAC","AC drain line and drip pan: clear and check","Annual","Moderate","Before cooling season."],["Station 51.5","Fire and life safety","Emergency and exit lights: 90 minute test","Annual","Moderate","Monthly 30 second push test can live with Tyler's routine list."],["Station 51.5","Electrical and generator","GFCI outlets: push test and reset","Every 6 months","Moderate",""],["Station 51.5","Plumbing and water","Backflow assembly: annual test","Annual","Moderate","Required yearly by the water purveyor."],["Station 51.5","Plumbing and water","Water heater: flush and check","Annual","Moderate",""],["Station 51.5","Plumbing and water","Septic tank: inspect and pump as needed","Every 3 years","Moderate","Delete if the building is on sewer."],["Station 51.5","Plumbing and water","Water heater relief valve: test","Annual","Moderate","Do it with the flush."],["Station 51.5","Roof and exterior","Roof and gutters: inspection","Annual","Moderate","Fall, before the rain."],["Station 51.5","Roof and exterior","Modular skirting, tie downs and underfloor: inspection","Annual","Moderate",""],["Station 51.5","Pest control","Pest control service","Quarterly","Moderate",""],["Station 51.5","Roof and exterior","Windows and exterior doors: seals and caulking","Annual","Low",""],["Station 52","HVAC","HVAC service: heating and cooling check","Every 6 months","High","Spring and fall."],["Station 52","HVAC","Apparatus bay exhaust system: service","Annual","High","Vehicle exhaust capture. Confirm which bays have one."],["Station 52","Fire and life safety","Fire extinguishers: annual inspection and tag","Annual","High",""],["Station 52","Fire and life safety","Fire alarm system: annual inspection and test","Annual","High","Confirm each building has a monitored alarm."],["Station 52","Fire and life safety","Smoke and CO detectors: test, replace batteries","Every 6 months","High",""],["Station 52","Fire and life safety","Fire sprinkler system: annual inspection","Annual","High","Confirm which buildings have sprinklers."],["Station 52","Electrical and generator","Generator: annual service by vendor","Annual","High","Monthly run test is on the Grounds Tracker."],["Station 52","Doors and bays","Bay doors and openers: service and safety check","Annual","High",""],["Station 52","Interior","Dryer vent and lint duct: clean","Every 6 months","High","Fire risk. Include gear dryer if there is one."],["Station 52","HVAC","HVAC filters: replace","Quarterly","Moderate",""],["Station 52","HVAC","AC drain line and drip pan: clear and check","Annual","Moderate","Before cooling season."],["Station 52","Fire and life safety","Emergency and exit lights: 90 minute test","Annual","Moderate","Monthly 30 second push test can live with Tyler's routine list."],["Station 52","Electrical and generator","GFCI outlets: push test and reset","Every 6 months","Moderate",""],["Station 52","Plumbing and water","Backflow assembly: annual test","Annual","Moderate","Required yearly by the water purveyor."],["Station 52","Plumbing and water","Water heater: flush and check","Annual","Moderate",""],["Station 52","Plumbing and water","Septic tank: inspect and pump as needed","Every 3 years","Moderate","Delete if the building is on sewer."],["Station 52","Plumbing and water","Water heater relief valve: test","Annual","Moderate","Do it with the flush."],["Station 52","Roof and exterior","Roof and gutters: inspection","Annual","Moderate","Fall, before the rain."],["Station 52","Pest control","Pest control service","Quarterly","Moderate",""],["Station 52","Roof and exterior","Windows and exterior doors: seals and caulking","Annual","Low",""],["Station 52","Interior","Kitchen: fridge coils, range hood filter, dishwasher filter","Every 6 months","Low",""],["Station 50","HVAC","HVAC service: heating and cooling check","Every 6 months","High","Spring and fall."],["Station 50","HVAC","Apparatus bay exhaust system: service","Annual","High","Vehicle exhaust capture. Confirm which bays have one."],["Station 50","Fire and life safety","Fire extinguishers: annual inspection and tag","Annual","High",""],["Station 50","Fire and life safety","Fire alarm system: annual inspection and test","Annual","High","Confirm each building has a monitored alarm."],["Station 50","Fire and life safety","Smoke and CO detectors: test, replace batteries","Every 6 months","High",""],["Station 50","Doors and bays","Bay doors and openers: service and safety check","Annual","High",""],["Station 50","Interior","Dryer vent and lint duct: clean","Every 6 months","High","Fire risk. Include gear dryer if there is one."],["Station 50","HVAC","HVAC filters: replace","Quarterly","Moderate",""],["Station 50","HVAC","AC drain line and drip pan: clear and check","Annual","Moderate","Before cooling season."],["Station 50","Fire and life safety","Emergency and exit lights: 90 minute test","Annual","Moderate","Monthly 30 second push test can live with Tyler's routine list."],["Station 50","Electrical and generator","GFCI outlets: push test and reset","Every 6 months","Moderate",""],["Station 50","Plumbing and water","Backflow assembly: annual test","Annual","Moderate","Required yearly by the water purveyor."],["Station 50","Plumbing and water","Water heater: flush and check","Annual","Moderate",""],["Station 50","Plumbing and water","Septic tank: inspect and pump as needed","Every 3 years","Moderate","Delete if the building is on sewer."],["Station 50","Plumbing and water","Water heater relief valve: test","Annual","Moderate","Do it with the flush."],["Station 50","Roof and exterior","Roof and gutters: inspection","Annual","Moderate","Fall, before the rain."],["Station 50","Pest control","Pest control service","Quarterly","Moderate",""],["Station 50","Roof and exterior","Windows and exterior doors: seals and caulking","Annual","Low",""],["Station 50","Interior","Kitchen: fridge coils, range hood filter, dishwasher filter","Every 6 months","Low",""]],"assets":[["Station 51","Roof and exterior","Roof",25,"",""],["Station 51","HVAC","HVAC unit(s)",15,"",""],["Station 51","Plumbing and water","Water heater",10,"",""],["Station 51","Interior","Flooring",15,"",""],["Station 51","Interior","Interior paint",8,"",""],["Station 51","Roof and exterior","Exterior paint or siding",12,"",""],["Station 51","Doors and bays","Bay doors and openers",20,"",""],["Station 51","HVAC","Bay exhaust system",20,"",""],["Station 51","Electrical and generator","Generator",25,"","CCFD13/NCEMS shared"],["Station 51.5","Roof and exterior","Roof",25,"",""],["Station 51.5","HVAC","HVAC unit(s)",15,"",""],["Station 51.5","Plumbing and water","Water heater",10,"",""],["Station 51.5","Interior","Flooring",15,"",""],["Station 51.5","Interior","Interior paint",8,"",""],["Station 51.5","Roof and exterior","Exterior paint or siding",12,"",""],["Station 52","Roof and exterior","Roof",25,"",""],["Station 52","HVAC","HVAC unit(s)",15,"",""],["Station 52","Plumbing and water","Water heater",10,"",""],["Station 52","Interior","Flooring",15,"",""],["Station 52","Interior","Interior paint",8,"",""],["Station 52","Roof and exterior","Exterior paint or siding",12,"",""],["Station 52","Doors and bays","Bay doors and openers",20,"",""],["Station 52","HVAC","Bay exhaust system",20,"",""],["Station 52","Electrical and generator","Generator",25,"",""],["Station 50","Roof and exterior","Roof",25,"",""],["Station 50","HVAC","HVAC unit(s)",15,"",""],["Station 50","Plumbing and water","Water heater",10,"",""],["Station 50","Interior","Flooring",15,"",""],["Station 50","Interior","Interior paint",8,"",""],["Station 50","Roof and exterior","Exterior paint or siding",12,"",""],["Station 50","Doors and bays","Bay doors and openers",20,"",""],["Station 50","HVAC","Bay exhaust system",20,"",""],["Station 51","Roof and exterior","Rear bays roof",25,"",""],["Station 52","Electrical and generator","Propane tanks",30,"",""],["Station 52","Plumbing and water","C1 toilet and sink",20,"",""],["Station 52","Plumbing and water","C2 toilet and sink",20,"",""]]};
 
 const DEMO = /[?&]demo=1/.test(location.search);
+const START_VIEW = (location.search.match(/[?&]view=([a-z]+)/) || [])[1] || '';
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || '';
 const LS = { cache: 'gt_cache_v1', site: 'gt_site_v1', filter: 'gt_filter_v1', cid: 'gt_clientid_v1',
   fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_' };
@@ -837,6 +920,7 @@ async function getSiteId() {
   return siteId;
 }
 </script>
+
 <script>
 /* ================= mapping ================= */
 function mapTask(it) {
@@ -1175,16 +1259,30 @@ const ICONS = {
   checks: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   money: '<path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   todo: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9"/>',
+  dash: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  bldg: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
   grd: '<path d="M12 22V12"/><path d="M12 12C12 7 8 4 3 4c0 5 4 8 9 8z"/><path d="M12 15c0-4 3-7 8-7 0 4-3 7-8 7z"/>'
 };
-const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']],
-               admin: [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']] };
-const FAC_TABS = ['home', 'wo', 'sched', 'money'];
-const PAGE_OF = { grd: 'all' };
+/* Phones get the input screens only. The dashboard, budget and planning live on the desktop (or anything 900px+ wide). */
+const LS_FULL = 'fg_full_admin_v1';
+function isDesk() { return window.innerWidth >= 900 || lsGet(LS_FULL, false) === true; }
+const TABS_FULL = [['home', 'Overview'], ['dash', 'Dashboard'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']];
+const TABS_LITE = [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['bldg', 'Buildings']];
+const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']], get admin() { return isDesk() ? TABS_FULL : TABS_LITE; } };
+const FAC_TABS = ['home', 'wo', 'sched', 'money', 'bldg'];
+const PAGE_OF = { grd: 'all', bldg: 'money' };
+function deskNote() {
+  if (section !== 'admin' || window.innerWidth >= 900) return '';
+  if (lsGet(LS_FULL, false) === true) return '<div class="desk-note"><span>Showing full admin on a small screen.</span><button onclick="setFullAdmin(false)">Phone view</button></div>';
+  return '<div class="desk-note"><span><b>Use desktop for full admin.</b> Dashboard, budget and planning open on a computer or in Teams.</span><button onclick="setFullAdmin(true)">Show here</button></div>';
+}
+function setFullAdmin(on) { lsSet(LS_FULL, !!on); if (TABS.admin.map(t => t[0]).indexOf(curTab) < 0) curTab = 'home'; switchTab(curTab); }
+let lastDesk = null;
+window.addEventListener('resize', () => { const d = isDesk(); if (lastDesk !== null && d !== lastDesk && section === 'admin') { if (TABS.admin.map(t => t[0]).indexOf(curTab) < 0) curTab = 'home'; switchTab(curTab); } lastDesk = d; });
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   $('pg-' + name).classList.add('active');
-  const tabbed = ['todo', 'home', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
+  const tabbed = ['todo', 'home', 'dash', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
   document.body.classList.toggle('no-tabs', !tabbed);
   document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0 || !isManager());
   $('refresh-btn').style.display = tabbed ? '' : 'none';
@@ -1221,9 +1319,11 @@ function render() {
   if (curTab === 'todo') renderTodo();
   else if (curTab === 'checks') renderChecks();
   else if (curTab === 'grd') renderAll();
-  else if (facState === 'ready' && FAC_TABS.indexOf(curTab) >= 0 && pageActive(curTab)) ({ home: renderHome, wo: renderWo, sched: renderSched, money: renderMoney })[curTab]();
+  else if (curTab === 'dash') renderDash();
+  else if (facState === 'ready' && FAC_TABS.indexOf(curTab) >= 0 && pageActive(PAGE_OF[curTab] || curTab)) ({ home: renderHome, wo: renderWo, sched: renderSched, money: renderMoney, bldg: renderMoney })[curTab]();
+  document.querySelectorAll('.desk-slot').forEach(el => el.innerHTML = deskNote());
   const s = lastSync ? 'Updated ' + timeStr(lastSync) : '';
-  ['sync-todo', 'sync-all', 'sync-home', 'sync-wo', 'sync-sched', 'sync-money'].forEach(id => {
+  ['sync-todo', 'sync-all', 'sync-home', 'sync-dash', 'sync-wo', 'sync-sched', 'sync-money'].forEach(id => {
     const el = $(id); if (!el) return;
     el.className = 'sync-line' + (syncErr ? ' err' : '');
     el.textContent = syncErr ? 'Could not update: ' + syncErr + (s ? ' · showing data from ' + timeStr(lastSync) : '') : s + (s ? ' · ' : '') + 'auto refresh every ' + CONFIG.refreshSeconds + 's';
@@ -1243,6 +1343,7 @@ function groupByStation(list, stations, keyOf, cardFn, sortFn, countFn) {
   }).join('');
 }
 </script>
+
 <script>
 /* ================= GROUNDS (same behaviour as Grounds Tracker v1.2) ================= */
 function stationOf(val) {
@@ -1561,6 +1662,7 @@ function sheetGrd(t) {
   $('sh-body').innerHTML = h + notesPhotosHtml();
 }
 </script>
+
 <script>
 /* ================= FACILITIES: shared bits ================= */
 function woAssignee(w) { const a = []; if (w.assignedId) a.push(personName(w.assignedId)); if (w.assignedOther) a.push(w.assignedOther); return a.length ? a.join(' + ') : 'Unassigned'; }
@@ -1952,6 +2054,7 @@ async function saveNewAsset() {
   catch (e) { toast('Not saved: ' + (e.message || e), { err: true, ms: 7000 }); $('new-save').disabled = false; }
 }
 </script>
+
 <script>
 /* ================= CREW: one To Do list for facilities + grounds ================= */
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -2033,6 +2136,128 @@ function homeGroundsHtml() {
   return h;
 }
 </script>
+
+<script>
+/* ================= ADMIN DASHBOARD (charts, printable, Teams tab friendly) ================= */
+const DASH_C = { ok: '#3A8A3A', soon: '#D9A400', over: '#C13E3E', need: '#B9C2B9', crit: '#C13E3E', urg: '#B87E0A', rout: '#8A918A', bar: '#2E6B2E', bar2: '#9CC79C' };
+function dTip(t) { return ' data-tip="' + esc(t) + '"'; }
+function dCard(title, body, sub) {
+  return '<div class="dcard"><div class="dch"><b>' + esc(title) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div><div class="dcb">' + body + '</div></div>';
+}
+function dKpi(val, label, sub, tone, onclick) {
+  return '<div class="dkpi ' + (tone || '') + (onclick ? ' tap' : '') + '"' + (onclick ? ' onclick="' + onclick + '"' : '') + '><b>' + val + '</b><span>' + esc(label) + '</span>' + (sub ? '<i>' + esc(sub) + '</i>' : '') + '</div>';
+}
+/* one 100% stacked bar with a legend underneath (counts in the legend, so color is never the only cue) */
+function dStack(parts, total) {
+  const tot = total || parts.reduce((t, p) => t + p.n, 0);
+  if (!tot) return '<div class="dempty">Nothing to show yet</div>';
+  return '<div class="dstack">' + parts.filter(p => p.n).map(p => '<div style="flex:' + p.n + ';background:' + p.c + '"' + dTip(p.label + ': ' + p.n + ' (' + Math.round(p.n / tot * 100) + '%)') + '></div>').join('') + '</div>' +
+    '<div class="dleg">' + parts.map(p => '<span><i style="background:' + p.c + '"></i>' + esc(p.label) + ' <b>' + p.n + '</b></span>').join('') + '</div>';
+}
+/* horizontal rows: label, stacked segments, value */
+function dRows(rows, segs) {
+  const max = Math.max(1, ...rows.map(r => segs.reduce((t, s) => t + (r[s.k] || 0), 0)));
+  return '<div class="drows">' + rows.map(r => {
+    const tot = segs.reduce((t, s) => t + (r[s.k] || 0), 0);
+    return '<div class="drow"><span class="dl">' + esc(r.label) + '</span><div class="dtrack">' +
+      segs.filter(s => r[s.k]).map(s => '<div style="width:' + (r[s.k] / max * 100) + '%;background:' + s.c + '"' + dTip(r.label + ' · ' + s.label + ': ' + (s.money ? money(r[s.k]) : r[s.k])) + '></div>').join('') +
+      '</div><span class="dv">' + (segs[0].money ? money(tot, true) : tot) + '</span></div>';
+  }).join('') + '</div>' + (segs.length > 1 ? '<div class="dleg">' + segs.map(s => '<span><i style="background:' + s.c + '"></i>' + esc(s.label) + '</span>').join('') + '</div>' : '');
+}
+/* vertical column chart, single series, svg */
+function dCols(items, opts) {
+  opts = opts || {};
+  const W = 420, H = 170, pb = 24, pt = 20, n = items.length, max = Math.max(1, ...items.map(i => i.v));
+  const bw = Math.min(40, (W / n) * 0.62), step = W / n;
+  let s = '<svg class="dsvg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(opts.aria || '') + '">';
+  [0.5, 1].forEach(f => { const y = pt + (H - pt - pb) * (1 - f); s += '<line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '" class="dgrid"/>'; });
+  s += '<line x1="0" x2="' + W + '" y1="' + (H - pb) + '" y2="' + (H - pb) + '" class="dbase"/>';
+  items.forEach((it, i) => {
+    const h = (H - pt - pb) * (it.v / max), x = i * step + (step - bw) / 2, y = H - pb - h;
+    if (it.v) s += '<path d="M' + x + ',' + (H - pb) + 'V' + (y + 4) + 'q0,-4 4,-4h' + (bw - 8) + 'q4,0 4,4V' + (H - pb) + 'z" fill="' + (it.c || DASH_C.bar) + '"><title>' + esc(it.label + ': ' + (opts.money ? money(it.v) : it.v)) + '</title></path>';
+    s += '<rect x="' + (i * step) + '" y="0" width="' + step + '" height="' + H + '" fill="transparent"' + dTip(it.label + ': ' + (opts.money ? money(it.v) : it.v)) + '/>';
+    s += '<text x="' + (i * step + step / 2) + '" y="' + (H - 8) + '" class="dax">' + esc(it.short || it.label) + '</text>';
+    if (it.v && (opts.labels || it.v === max)) s += '<text x="' + (i * step + step / 2) + '" y="' + (y - 5) + '" class="dvl">' + (opts.money ? money(it.v) : it.v) + '</text>';
+  });
+  return s + '</svg>';
+}
+function dashTip(e) {
+  const t = e.target.closest ? e.target.closest('[data-tip]') : null, tip = $('dash-tip');
+  if (!tip) return;
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.textContent = t.getAttribute('data-tip'); tip.style.display = 'block';
+  const x = Math.min(window.innerWidth - tip.offsetWidth - 8, e.clientX + 12), y = e.clientY - tip.offsetHeight - 10;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = (y < 8 ? e.clientY + 16 : y) + 'px';
+}
+function renderDash() {
+  const now = new Date(), y0 = now.getFullYear(), facOk = facState === 'ready';
+  let h = '<div class="dtop"><div><b>Facilities &amp; Grounds</b><span>' + esc(now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })) + '</span></div>' +
+    '<button class="dprint" onclick="window.print()">Print / PDF</button></div>';
+  // ---------- numbers ----------
+  const open = facOk ? fac.wo.filter(woOpen) : [], crit = open.filter(w => w.priority === 'Critical');
+  const act = facOk ? fac.svc.filter(s => s.active) : [];
+  const sv = { over: 0, soon: 0, ok: 0, need: 0 }; act.forEach(s => sv[svcState(s)]++);
+  const dated = act.length - sv.need, upPct = dated ? Math.round((sv.ok + sv.soon) / dated * 100) : null;
+  const B = facOk ? budgetBy(y0) : 0, S = facOk ? spentBy(y0) : 0;
+  const wk = tasks.filter(inWeek), wkDone = wk.filter(t => t.status === ST.DONE).length, wkPct = wk.length ? Math.round(wkDone / wk.length * 100) : null;
+  const gLate = tasks.filter(t => isOverdue(t) || t.status === ST.NC).length;
+  h += '<div class="dkpis">' +
+    dKpi(open.length, 'Open work orders', crit.length ? crit.length + ' critical' : 'none critical', crit.length ? 'bad' : '', "woFilter='open';switchTab('wo')") +
+    dKpi(upPct == null ? '-' : upPct + '%', 'Services current', sv.over ? sv.over + ' overdue' : (sv.need ? sv.need + ' need a date' : 'all on schedule'), sv.over ? 'bad' : '', "scFilter='due';switchTab('sched')") +
+    dKpi(money(S), 'Spent ' + y0, B ? Math.round(S / B * 100) + '% of ' + money(B) : 'no budget set', B && S > B ? 'bad' : '', "moneyView='overview';switchTab('money')") +
+    dKpi(wkPct == null ? '-' : wkPct + '%', 'Grounds this week', wkDone + ' of ' + wk.length + ' done' + (gLate ? ' · ' + gLate + ' late' : ''), gLate ? 'warn' : '', "allFilter='week';switchTab('grd')") +
+    '</div>';
+  h += '<div class="dgrid2">';
+  if (facOk) {
+    // services status
+    h += dCard('Building services', dStack([{ label: 'Overdue', n: sv.over, c: DASH_C.over }, { label: 'Due in 30 days', n: sv.soon, c: DASH_C.soon }, { label: 'On schedule', n: sv.ok, c: DASH_C.ok }, { label: 'Needs a last done date', n: sv.need, c: DASH_C.need }]),
+      act.length + ' scheduled services');
+    // open work orders by station and priority
+    const woRows = FSTATIONS.map(s => { const r = { label: s.key }; ['Critical', 'Urgent', 'Routine'].forEach(p => r[p] = open.filter(w => w.station === s.key && w.priority === p).length); return r; });
+    h += dCard('Open work orders by station', open.length ? dRows(woRows, [{ k: 'Critical', label: 'Critical', c: DASH_C.crit }, { k: 'Urgent', label: 'Urgent', c: DASH_C.urg }, { k: 'Routine', label: 'Routine', c: DASH_C.rout }]) : '<div class="dempty">No open work orders</div>', open.length + ' open');
+    // budget vs spent by station
+    const bRows = FSTATIONS.map(s => { const b = budgetBy(y0, s.key), sp = spentBy(y0, s.key), cm = committedBy(s.key), pct = b ? (sp + cm) / b : 0;
+      return '<div class="dbud"><div class="dbt"><span>' + esc(s.key) + '</span><b>' + money(sp + cm) + ' <em>of ' + (b ? money(b) : 'no budget') + '</em></b></div>' +
+        '<div class="meter"' + dTip(s.key + ': spent ' + money(sp) + ', open estimates ' + money(cm) + (b ? ', budget ' + money(b) : '')) + '><div class="' + (pct > 1 ? 'over' : pct > .85 ? 'hot' : '') + '" style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></div></div></div>'; }).join('');
+    const ag = [['NCEMS', s => s.ncems], ['FD13', s => 1 - s.ncems]].map(a => { let sp = 0; FSTATIONS.forEach(s => sp += spentBy(y0, s.key) * a[1](s)); return a[0] + ' ' + money(sp); }).join(' · ');
+    h += dCard(y0 + ' budget vs spent', bRows + '<div class="dnote">Spent + open estimates. Split by agency: ' + esc(ag) + '</div>', budStatus(y0) === 'None' ? 'no budget entered' : budStatus(y0));
+    // spending by month, last 12 months
+    const months = []; for (let i = 11; i >= 0; i--) { const d = new Date(y0, now.getMonth() - i, 1); months.push({ y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), short: d.toLocaleDateString('en-US', { month: 'short' }).slice(0, 3) }); }
+    months.forEach(mo => mo.v = fac.wo.filter(w => w.status === WOS.DONE && w.actual && w.dateDone && w.dateDone.getFullYear() === mo.y && w.dateDone.getMonth() === mo.m).reduce((t, w) => t + w.actual, 0));
+    const tot12 = months.reduce((t, m) => t + m.v, 0);
+    h += dCard('Repair and service spending', tot12 ? dCols(months, { money: true, aria: 'Spending by month, last 12 months' }) : '<div class="dempty">No completed work with a cost yet. Enter the actual cost when you mark a job Done.</div>', 'last 12 months · ' + money(tot12));
+    // replacements next 5 years
+    const yrs = [0, 1, 2, 3, 4].map(i => ({ label: String(y0 + i), short: String(y0 + i), v: fac.asset.filter(a => a.cost && assetReplaceYear(a) === y0 + i).reduce((t, a) => t + a.cost, 0) }));
+    const past = fac.asset.filter(a => a.cost && assetReplaceYear(a) && assetReplaceYear(a) < y0).reduce((t, a) => t + a.cost, 0);
+    const missing = fac.asset.filter(a => !a.installYear || !a.life || !a.cost).length;
+    const anyRep = yrs.some(x => x.v) || past;
+    h += dCard('Building replacements coming due', (anyRep ? dCols(yrs, { money: true, labels: true, aria: 'Replacement cost by year' }) : '<div class="dempty">No replacement dates yet.</div>') +
+      (past ? '<div class="dnote bad">Already past expected life: ' + money(past) + '</div>' : '') + (missing ? '<div class="dnote">' + missing + ' of ' + fac.asset.length + ' building items still need install year, life or cost (Budget &gt; Buildings).</div>' : ''), 'next 5 years');
+    // walkthroughs
+    h += dCard('Monthly walkthroughs', '<div class="dwalk">' + FSTATIONS.map(s => { const cs = checkState(s.key), ok = cs.state === 'ok';
+      return '<div class="' + (ok ? 'ok' : 'due') + '"><b>' + esc(s.key.replace('Station ', '')) + '</b><span>' + (ok ? 'Done ' + md(cs.last.date) : cs.last ? 'Due · last ' + md(cs.last.date) : 'Not done yet') + '</span></div>'; }).join('') + '</div>', 'every ' + CONFIG.checkEveryDays + ' days');
+  } else {
+    h += dCard('Facilities', '<div class="dempty">Facilities charts show up once setup is finished.</div>');
+  }
+  // grounds by station this week
+  const gRows = STATIONS.map(s => { const list = wk.filter(t => grdStationKey(t) === s.name); return { label: s.name, done: list.filter(t => t.status === ST.DONE).length, open: list.filter(t => isOpen(t) && !isOverdue(t)).length, late: list.filter(t => isOverdue(t) || t.status === ST.NC).length }; });
+  h += dCard('Grounds this week', wk.length ? dRows(gRows, [{ k: 'done', label: 'Done', c: DASH_C.ok }, { k: 'open', label: 'Open', c: DASH_C.bar2 }, { k: 'late', label: 'Late or not done', c: DASH_C.over }]) : '<div class="dempty">No grounds tasks this week</div>', wk.length + ' tasks');
+  h += '</div>';
+  // needs attention list
+  if (facOk) {
+    const att = open.filter(w => w.priority !== 'Routine').sort(sortWo).slice(0, 8);
+    const due = act.filter(s => svcState(s) === 'over').sort((a, b) => svcNext(a) - svcNext(b)).slice(0, 8);
+    if (att.length || due.length) h += '<div class="dgrid2">' +
+      dCard('Critical and urgent jobs', att.length ? att.map(w => '<div class="dli" onclick="openSheet(\'wo\',\'' + w.id + '\')"><span class="pill ' + prioCls(w.priority) + '">' + esc(w.priority) + '</span><b>' + esc(w.title) + '</b><em>' + esc(w.station) + ' · ' + esc(w.status) + '</em></div>').join('') : '<div class="dempty">None</div>') +
+      dCard('Overdue services', due.length ? due.map(s => '<div class="dli" onclick="openSheet(\'svc\',\'' + s.id + '\')"><b>' + esc(s.title) + '</b><em>' + esc(s.station) + ' · was due ' + mdy(svcNext(s)) + '</em></div>').join('') : '<div class="dempty">None</div>') + '</div>';
+  }
+  h += '<div class="dfoot">Live from the Facilities and Grounds SharePoint site · ' + (lastSync ? 'updated ' + timeStr(lastSync) : 'loading') + '</div>';
+  $('dash-body').innerHTML = h;
+}
+document.addEventListener('mousemove', e => { if (curTab === 'dash') dashTip(e); });
+document.addEventListener('click', e => { if (curTab === 'dash') dashTip(e); });
+</script>
+
 <script>
 /* ================= CHECKS (monthly walkthrough) ================= */
 function checkGroups(stKey) { const s = fst(stKey); return WALK.concat([s && s.bays ? WALK_BAYS : WALK_MOD]); }
@@ -2141,6 +2366,7 @@ function committedBy(st) { return fac.wo.filter(w => woOpen(w) && (!st || w.stat
 function budgetBy(y, st, cat) { return budRows(y).filter(b => (!st || b.station === st) && (!cat || b.category === cat)).reduce((t, b) => t + b.amount, 0); }
 function renderMoney() {
   const y0 = new Date().getFullYear();
+  if (curTab === 'bldg') { $('money-chips').innerHTML = ''; return renderAssets(); }
   $('money-chips').innerHTML = chipHtml([['overview', 'Overview'], ['plan', 'Plan ' + (y0 + 1)], ['assets', 'Buildings']], moneyView, 'setMoneyView');
   if (moneyView === 'plan') return renderPlan(y0 + 1);
   if (moneyView === 'assets') return renderAssets();
@@ -2308,6 +2534,7 @@ async function boot() {
     facState = 'ready';
     await refresh(false);
     switchSection(startSection());
+    if (START_VIEW === 'dash' && isManager() && isDesk()) switchTab('dash');
     return;
   }
   if (!clientId()) { showPage('setup'); return; }
@@ -2315,6 +2542,7 @@ async function boot() {
   if (!account) { showPage('signin'); return; }
   loadCache();
   switchSection(startSection());
+  if (START_VIEW === 'dash' && isManager() && isDesk()) { if (section !== 'admin') switchSection('admin'); curTab = 'dash'; showPage('dash'); render(); }
   await getSiteId().catch(() => {});
   await facCheck();
   if (section === 'admin') switchTab(curTab); else render();
