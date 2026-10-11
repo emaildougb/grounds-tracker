@@ -483,7 +483,7 @@
 <body class="no-tabs no-seg">
 
 <header class="hdr">
-  <a class="hdr-back" id="hub-link" href="https://hub.northcountryems.org/" aria-label="Back to hub">
+  <a class="hdr-back" id="hub-link" href="https://hub.northcountryems.org/" aria-label="Back" onclick="return appBackClick(event)">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
   </a>
   <img class="hdr-logo" src="logo.png" alt="NCEMS">
@@ -498,7 +498,8 @@
 </header>
 
 <div class="seg" id="seg">
-  <button id="seg-crew" onclick="switchSection('crew')">Crew</button>
+  <button id="seg-fac" onclick="switchSection('fac')">Facilities</button>
+  <button id="seg-grd" onclick="switchSection('grd')">Grounds</button>
   <button id="seg-admin" onclick="switchSection('admin')">Admin</button>
 </div>
 
@@ -680,7 +681,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.4';
+const VERSION = '2.5';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -779,14 +780,14 @@ const DEMO = /[?&]demo=1/.test(location.search);
 const START_VIEW = (location.search.match(/[?&]view=([a-z]+)/) || [])[1] || '';
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || '';
 const LS = { cache: 'gt_cache_v1', site: 'gt_site_v1', filter: 'gt_filter_v1', cid: 'gt_clientid_v1',
-  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_' };
+  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', area: 'fg_area_v1', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_' };
 
 let msalApp = null, account = null;
 let siteId = null;
 let tasks = [];
 let people = [], peopleById = {}, myLookupId = null;
 let weekFilter = 'all', allFilter = 'week';
-let section = 'crew', curTab = 'todo';
+let section = 'crew', curTab = 'todo', crewArea = 'fac';
 let crewStation = '';
 let lastSync = null, syncErr = '', facErr = '';
 let busy = false;
@@ -1124,7 +1125,7 @@ async function facCheck() {
   } catch (e) { facState = facIds ? 'ready' : 'error'; facErr = e.message || String(e); }
 }
 let setupView = false;
-function openSetupCheck() { closeInfo(); if (section !== 'admin') switchSection('admin'); setupView = true; showPage('facsetup'); renderTabbar(); renderFacSetup(); }
+function openSetupCheck() { closeInfo(); navPush(); if (section !== 'admin') switchSection('admin'); setupView = true; showPage('facsetup'); renderTabbar(); renderFacSetup(); }
 async function renderFacSetup() {
   const b = $('facsetup-body');
   if (facState === 'unknown') { b.innerHTML = 'Loading Facilities...'; return; }
@@ -1145,7 +1146,7 @@ async function renderFacSetup() {
       catch (e) { state = 'part'; extra = e.message; }
     }
     states.push(state);
-    const go = { wo: "switchTab('wo')", svc: "openFill('svc')", asset: "openFill('asset')", chk: "switchSection('crew');switchTab('checks')", bud: "moneyView='plan';switchTab('money')" }[k];
+    const go = { wo: "switchTab('wo')", svc: "openFill('svc')", asset: "openFill('asset')", chk: "switchSection('fac');switchTab('checks')", bud: "moneyView='plan';switchTab('money')" }[k];
     rows.push('<div class="setup-row tap" onclick="setupView=false;' + go + '"><span class="ok-dot ' + (state === 'ok' ? '' : state) + '"></span><b>' + esc(FAC[k].name) + '</b><span>' + (state === 'ok' ? (k === 'svc' || k === 'asset' ? 'Ready · <u>Fill in</u>' : 'Ready · <u>Open</u>') : state === 'part' ? esc(extra) : 'Not created') + '</span></div>');
   }
   const allOk = states.every(x => x === 'ok');
@@ -1348,7 +1349,7 @@ const LS_FULL = 'fg_full_admin_v1';
 function isDesk() { return !isPhoneDevice() || lsGet(LS_FULL, false) === true; }
 const TABS_FULL = [['home', 'Overview'], ['dash', 'Dashboard'], ['fill', 'Fill In'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']];
 const TABS_LITE = [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['bldg', 'Buildings']];
-const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']], get admin() { return isDesk() ? TABS_FULL : TABS_LITE; } };
+const TABS = { get crew() { return crewArea === 'grd' ? [['todo', 'To Do'], ['grd', 'All tasks']] : [['todo', 'To Do'], ['checks', 'Walkthrough']]; }, get admin() { return isDesk() ? TABS_FULL : TABS_LITE; } };
 const FAC_TABS = ['home', 'wo', 'sched', 'money', 'bldg'];
 const PAGE_OF = { grd: 'all', bldg: 'money' };
 function deskNote() {
@@ -1364,7 +1365,8 @@ function showPage(name) {
   $('pg-' + name).classList.add('active');
   const tabbed = ['todo', 'home', 'dash', 'fill', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
   document.body.classList.toggle('no-tabs', !tabbed);
-  document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0 || !isManager());
+  document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0);
+  $('seg-admin').style.display = isManager() ? '' : 'none';
   $('refresh-btn').style.display = tabbed ? '' : 'none';
   $('chk-progress').classList.toggle('show', name === 'checks' && !!checkStation);
 }
@@ -1372,20 +1374,55 @@ function renderTabbar() {
   let badges = {};
   if (section === 'admin') badges = { home: fac.wo.filter(w => woOpen(w) && w.priority === 'Critical').length, sched: fac.svc.filter(s => s.active && svcState(s) === 'over').length,
     grd: tasks.filter(t => isOverdue(t) || t.status === ST.NC).length };
-  else badges = { todo: todoItems().filter(x => !x.done).length, checks: FSTATIONS.filter(s => (!crewStation || s.key === crewStation) && facState === 'ready' && checkState(s.key).state === 'due').length };
+  else badges = { todo: todoItems().filter(x => !x.done).length, grd: crewArea === 'grd' ? tasks.filter(t => isOverdue(t) || t.status === ST.NC).length : 0, checks: FSTATIONS.filter(s => (!crewStation || s.key === crewStation) && facState === 'ready' && checkState(s.key).state === 'due').length };
   $('tabbar').innerHTML = TABS[section].map(t => '<button class="tab' + (t[0] === curTab ? ' active' : '') + '" onclick="switchTab(\'' + t[0] + '\')">' +
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[t[0]] + '</svg>' +
     '<span class="tab-lbl">' + t[1] + '</span>' + (badges[t[0]] ? '<span class="badge">' + badges[t[0]] + '</span>' : '') + '</button>').join('');
 }
 function switchSection(s) {
+  navPush();
+  const wasRestoring = navRestoring; navRestoring = true;
+  if (s === 'fac' || s === 'grd') { crewArea = s; lsSet(LS.area, s); s = 'crew'; }
   if (s === 'admin' && !isManager()) s = 'crew';
   if (s !== section) leaveCheck();
   section = s; lsSet(LS.section, s);
-  $('seg-crew').classList.toggle('on', s === 'crew'); $('seg-admin').classList.toggle('on', s === 'admin');
-  $('hdr-title').textContent = s === 'crew' ? 'Facilities & Grounds' : 'F&G Admin';
+  $('seg-fac').classList.toggle('on', s === 'crew' && crewArea === 'fac');
+  $('seg-grd').classList.toggle('on', s === 'crew' && crewArea === 'grd');
+  $('seg-admin').classList.toggle('on', s === 'admin');
+  $('hdr-title').textContent = s === 'admin' ? 'F&G Admin' : crewArea === 'grd' ? 'Grounds' : 'Facilities';
   switchTab(s === 'crew' ? 'todo' : 'home');
+  navRestoring = wasRestoring;
 }
+/* ---- in-app back: goes to the last screen, not the hub ---- */
+let navStack = [], navRestoring = false, navReady = false;
+function navState() { return { s: section, a: crewArea, t: curTab }; }
+function navPush() {
+  if (navRestoring || !navReady) return;
+  const st = navState(), last = navStack[navStack.length - 1];
+  if (last && last.s === st.s && last.a === st.a && last.t === st.t) return;
+  navStack.push(st);
+  try { history.pushState({ fg: navStack.length }, ''); } catch (e) {}
+}
+function navRestore(st) {
+  navRestoring = true;
+  if (st.s === 'admin') switchSection('admin'); else switchSection(st.a);
+  if (st.t !== curTab) { if (st.t === 'fill') openFill(); else switchTab(st.t); }
+  navRestoring = false;
+}
+function appBackClick(e) {
+  if ($('sheet').classList.contains('show')) { e.preventDefault(); closeSheet(); return false; }
+  if ($('md-ov').classList.contains('show')) { e.preventDefault(); closeModal(); return false; }
+  if (navStack.length) { e.preventDefault(); history.back(); return false; }
+  return true;   // nothing to go back to: the link goes to the NCEMS hub
+}
+window.addEventListener('popstate', () => {
+  if ($('sheet').classList.contains('show') || $('md-ov').classList.contains('show')) {
+    closeSheet(); closeModal(); try { history.pushState({ fg: navStack.length }, ''); } catch (e) {} return;
+  }
+  const st = navStack.pop(); if (st) navRestore(st);
+});
 function switchTab(t) {
+  if (t !== curTab) navPush();
   setupView = false;
   if (t !== 'checks') leaveCheck();
   curTab = t;
@@ -2149,7 +2186,7 @@ function grdStationKey(t) { const s = stationOf(t.station); return s ? s.name : 
 function atStation(key) { return !crewStation || key === crewStation; }
 function todoItems() {
   const out = [], today = new Date();
-  const facOk = facState === 'ready';
+  const facOk = facState === 'ready' && crewArea === 'fac';
   if (facOk) {
     fac.wo.forEach(w => {
       if (!atStation(w.station)) return;
@@ -2168,7 +2205,7 @@ function todoItems() {
         done: !!doneToday, crit: false, tag: s.importance === 'High' ? '<span class="pill hi tag">High</span>' : '', sort: (svcNext(s) || today).getTime() });
     });
   }
-  tasks.forEach(t => {
+  if (crewArea === 'grd') tasks.forEach(t => {
     const key = grdStationKey(t);
     if (!atStation(key) || !inWeek(t)) return;
     const due = dueLabel(t), done = t.status === ST.DONE;
@@ -2189,9 +2226,10 @@ function todoCheck(kind, id, wasDone) {
   if (kind === 'svc') { if (wasDone) { toast('Already done today. Open it to change the date.'); return; } svcDone(id); }
 }
 function renderTodo() {
-  $('todo-st').innerHTML = chipHtml([['', 'All']].concat(FSTATIONS.map(s => [s.key, s.key.replace('Station ', 'Sta ')])), crewStation, 'setCrewStation');
+  const pr = document.querySelector('#pg-todo .report-btn'); if (pr) pr.style.display = crewArea === 'grd' ? 'none' : '';
+  $('todo-st').innerHTML = chipHtml([['', 'All']].concat((crewArea === 'grd' ? FSTATIONS.filter(s => s.key !== 'Station 50') : FSTATIONS).map(s => [s.key, s.key.replace('Station ', 'Sta ')])), crewStation, 'setCrewStation');
   const items = todoItems();
-  const SECS = [['fix', 'Fix it now', 'red'], ['grd', 'Grounds this week', ''], ['svc', 'Building services due', ''], ['jobs', 'Other repairs', '']];
+  const SECS = crewArea === 'grd' ? [['grd', 'Grounds this week', '']] : [['fix', 'Fix it now', 'red'], ['svc', 'Building services due', ''], ['jobs', 'Other repairs', '']];
   let h = '';
   SECS.forEach(([k, label, cls]) => {
     const list = items.filter(x => x.sec === k).sort((a, b) => (a.done - b.done) || (a.sort - b.sort));
@@ -2199,12 +2237,12 @@ function renderTodo() {
     const left = list.filter(x => !x.done).length;
     h += '<div class="todo-sec ' + cls + '"><div class="todo-head"><b>' + label + '</b><span>' + (left ? left + ' to do' : 'all done') + '</span></div><div class="todo-box">' + list.map(todoRow).join('') + '</div></div>';
   });
-  if (facState === 'ready') {
+  if (facState === 'ready' && crewArea === 'fac') {
     const due = FSTATIONS.filter(s => atStation(s.key) && checkState(s.key).state !== 'ok');
     if (due.length) h += '<div class="todo-sec"><div class="todo-head"><b>Monthly walkthrough</b><span>' + due.length + ' due</span></div></div>' + due.map(stationCheckRow).join('');
   }
-  if (!h) h = '<div class="todo-sec"><div class="todo-box caught"><b>All caught up</b><span>Nothing due ' + (crewStation ? 'at ' + esc(crewStation) + ' ' : '') + 'right now. See something broken? Report it.</span></div></div>';
-  if (facState !== 'ready' && !DEMO) h += '<div class="small-note" style="text-align:center;padding:10px 20px">Building repairs and services show up here once a Battalion Chief finishes Facilities setup.</div>';
+  if (!h) h = '<div class="todo-sec"><div class="todo-box caught"><b>All caught up</b><span>Nothing due ' + (crewStation ? 'at ' + esc(crewStation) + ' ' : '') + 'right now. ' + (crewArea === 'grd' ? 'Nice work.' : 'See something broken? Report it.') + '</span></div></div>';
+  if (crewArea === 'fac' && facState !== 'ready' && !DEMO) h += '<div class="small-note" style="text-align:center;padding:10px 20px">Building repairs and services show up here once a Battalion Chief finishes Facilities setup.</div>';
   $('todo-list').innerHTML = h;
 }
 
@@ -2348,6 +2386,7 @@ document.addEventListener('click', e => { if (curTab === 'dash') dashTip(e); });
 /* ================= FILL IN: fast data entry for Dennis (services + building items) ================= */
 let fillKind = 'svc', fillStation = '', fillBlanks = false;
 function openFill(kind) {
+  if (curTab !== 'fill') navPush();
   if (kind) fillKind = kind;
   if (section !== 'admin') switchSection('admin');
   curTab = 'fill'; setupView = false;
@@ -2747,13 +2786,15 @@ async function boot() {
   if (IN_FRAME && $('open-browser')) $('open-browser').style.display = 'inline-block';
   weekFilter = lsGet(LS.filter, 'all');
   crewStation = lsGet(LS.crewSt, '');
-  const startSection = () => isManager() ? (lsGet(LS.section, 'admin') === 'crew' ? 'crew' : 'admin') : 'crew';
+  crewArea = lsGet(LS.area, '') || 'fac';
+  const startSection = () => { if (!lsGet(LS.area, '') && isGroundsWorker()) crewArea = 'grd'; return isManager() && lsGet(LS.section, 'admin') !== 'crew' ? 'admin' : crewArea; };
   if (DEMO) {
     setupDemo();
     facState = 'ready';
     await refresh(false);
     switchSection(startSection());
     if (START_VIEW === 'dash' && isManager() && isDesk()) switchTab('dash');
+    navReady = true;
     return;
   }
   if (!clientId()) { showPage('setup'); return; }
@@ -2765,6 +2806,7 @@ async function boot() {
   await getSiteId().catch(() => {});
   await facCheck();
   if (section === 'admin') switchTab(curTab); else render();
+  navReady = true;
   await refresh(false);
   startAutoRefresh();
 }
