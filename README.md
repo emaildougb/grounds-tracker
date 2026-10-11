@@ -7,7 +7,7 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.2**
+**Version 2.3**
 
 ## Links
 
@@ -33,7 +33,7 @@ The app has two sides. The switch at the top only shows for BCs and the Chief.
 - **Crew** (Tyler, Nick, crews): one **To Do** list per station, with a big circle to tap on each item. It mixes grounds tasks this week, repairs (Critical and Urgent first under "Fix it now"), building services coming due, and the monthly walkthrough. Tap the circle to finish it, tap the words to open details, notes and photos. Station chips at the top remember your choice. Big red **Report a problem** button. Second tab: **Walkthrough**.
 - **Admin** (BCs and Bryce): **Overview** (facilities and grounds counts, what needs attention), **Work** (all work orders), **Schedule**, **Grounds** (every grounds task: this week, late or not done, open, done), **Budget**.
 
-**Phone vs desktop.** On a phone, Admin keeps the input screens only: Overview, Work, Schedule, Grounds and Buildings (fill in install year, life, cost). A blue bar says "Use desktop for full admin", with a **Show here** button for when you really need it. On a computer or in Teams (900px wide or more) Admin also has **Dashboard** and **Budget**.
+**Phone vs desktop.** On a phone, Admin keeps the input screens only: Overview, Work, Schedule, Grounds and Buildings (fill in install year, life, cost). A blue bar says "Use desktop for full admin", with a **Show here** button for when you really need it. On a computer or in Teams (the app checks the device, not the window size) Admin also has **Dashboard** and **Budget**.
 
 **Dashboard** (desktop): open work orders, services current, spent vs budget, grounds this week, building services status, open jobs by station, budget vs spent by station with the NCEMS/FD13 split, spending by month, replacements coming due, walkthroughs, and the critical and overdue lists. Hover any bar for numbers. **Print / PDF** prints just the dashboard. Direct link for a Teams tab: `https://emaildougb.github.io/grounds-tracker/?view=dash`
 
@@ -122,6 +122,13 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. iOS caches hard: delete the home screen icon and add it again after every update.
 
 ## Changelog
+
+### v2.3
+- Phone vs desktop now detected by device, so a narrow window on a PC still gets full admin
+- Info (i) panel says Phone version or Desktop version
+- "Check facilities setup" shows "Everything is set up" with a Back button instead of a setup screen
+- Wording says "this computer" on a PC instead of "this phone"
+- Sign-in inside a Teams tab uses a popup, with an Open in browser link as a fallback
 
 ### v2.2
 - Admin Dashboard (desktop and Teams), printable, `?view=dash` link

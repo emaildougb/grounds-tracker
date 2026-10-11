@@ -470,7 +470,7 @@
       <div class="center-body">
         This app needs its Microsoft app registration Client ID before anyone can sign in.
         <input class="text-in" id="setup-cid" placeholder="Paste Application (client) ID" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <button class="big-btn" onclick="saveSetup()">Save on this phone</button>
+        <button class="big-btn" onclick="saveSetup()">Save</button>
         <a class="big-btn ghost" href="?demo=1">Try the demo</a>
       </div>
     </div>
@@ -480,9 +480,10 @@
     <div class="center-card">
       <div class="center-head"><img src="logo.png" alt=""><h2>Facilities and Grounds</h2></div>
       <div class="center-body">
-        Sign in with your North Country EMS Microsoft account. You only do this once on this phone.
+        Sign in with your North Country EMS Microsoft account. You only do this once on each device.
         <button class="big-btn" id="signin-btn" onclick="signIn()">Sign in with Microsoft</button>
         <div class="err-box" id="signin-err"></div>
+        <a id="open-browser" href="https://emaildougb.github.io/grounds-tracker/" target="_blank" rel="noopener" style="display:none;margin-top:14px;font-weight:800;color:var(--info)">Open in browser</a>
         <div class="small-note">Uses the same login as Outlook and Teams.</div>
       </div>
     </div>
@@ -633,7 +634,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.2';
+const VERSION = '2.3';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -829,6 +830,15 @@ function toast(msg, opts) {
 function hideToast() { $('toast').classList.remove('show'); }
 
 /* ---------------- auth ---------------- */
+const IN_FRAME = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const IS_AUTH_POPUP = !!window.opener && window.opener !== window && /[#&?](code|error)=/.test(location.hash + location.search);
+function isPhoneDevice() {
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPod|Android.+Mobile|Windows Phone/i.test(ua)) return true;
+  const coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches && !matchMedia('(any-pointer:fine)').matches;
+  return !!(coarse && Math.min(screen.width, screen.height) < 700);
+}
+function devWord() { return isPhoneDevice() ? 'this phone' : 'this computer'; }
 function clientId() { return CONFIG.clientId || lsGet(LS.cid, ''); }
 function redirectUri() { return location.origin + location.pathname.replace(/index\.html$/, ''); }
 async function initAuth() {
@@ -843,7 +853,15 @@ async function initAuth() {
   else account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
   if (account) msalApp.setActiveAccount(account);
 }
-function signIn() { $('signin-err').classList.remove('show'); msalApp.loginRedirect({ scopes: SCOPES, prompt: 'select_account' }).catch(e => showSigninErr(e)); }
+function signIn() {
+  $('signin-err').classList.remove('show');
+  if (IN_FRAME) {
+    msalApp.loginPopup({ scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
+      .catch(e => showSigninErr({ message: (e && (e.errorMessage || e.message) || String(e)) + ' If the sign-in window was blocked, use "Open in browser" below.' }));
+    return;
+  }
+  msalApp.loginRedirect({ scopes: SCOPES, prompt: 'select_account' }).catch(e => showSigninErr(e));
+}
 function showSigninErr(e) { const b = $('signin-err'); b.textContent = (e && (e.errorMessage || e.message)) || String(e); b.classList.add('show'); }
 function signOut() {
   if (DEMO) { location.href = location.pathname; return; }
@@ -855,6 +873,7 @@ async function getToken(scopes) {
   try { const r = await msalApp.acquireTokenSilent({ scopes, account }); return r.accessToken; }
   catch (e) {
     if (e instanceof msal.InteractionRequiredAuthError || /interaction_required|login_required|consent_required/.test(e.errorCode || '')) {
+      if (IN_FRAME) { const r = await msalApp.acquireTokenPopup({ scopes, account }); return r.accessToken; }
       await msalApp.acquireTokenRedirect({ scopes, account });
       return new Promise(() => {});
     }
@@ -1057,6 +1076,8 @@ async function facCheck() {
     else { facIds = found; facState = 'missing'; }
   } catch (e) { facState = facIds ? 'ready' : 'error'; facErr = e.message || String(e); }
 }
+let setupView = false;
+function openSetupCheck() { closeInfo(); if (section !== 'admin') switchSection('admin'); setupView = true; showPage('facsetup'); renderTabbar(); renderFacSetup(); }
 async function renderFacSetup() {
   const b = $('facsetup-body');
   if (facState === 'unknown') { b.innerHTML = 'Loading Facilities...'; return; }
@@ -1069,16 +1090,25 @@ async function renderFacSetup() {
     return;
   }
   b.innerHTML = 'Checking lists...';
-  let rows = [];
+  let rows = [], states = [];
   for (const k of FAC_KEYS) {
     let state = 'no', extra = '';
     if (facIds && facIds[k]) {
       try { const have = await API.facColumns(facIds[k]); const miss = FAC[k].cols.filter(c => have.indexOf(c.name) < 0); state = miss.length ? 'part' : 'ok'; if (miss.length) extra = miss.length + ' column' + (miss.length > 1 ? 's' : '') + ' missing'; }
       catch (e) { state = 'part'; extra = e.message; }
     }
+    states.push(state);
     rows.push('<div class="setup-row"><span class="ok-dot ' + (state === 'ok' ? '' : state) + '"></span><b>' + esc(FAC[k].name) + '</b><span>' + (state === 'ok' ? 'Ready' : state === 'part' ? esc(extra) : 'Not created') + '</span></div>');
   }
-  b.innerHTML = 'Facilities keeps its data in five SharePoint lists on the Facilities and Grounds site. Tap the button and the app creates them, then loads the starter data (' +
+  const allOk = states.every(x => x === 'ok');
+  if (allOk) {
+    b.innerHTML = '<b style="color:var(--g-mid)">Everything is set up.</b> All five SharePoint lists are there with every column, so there is nothing to fix.' +
+      '<div style="margin-top:14px">' + rows.join('') + '</div>' +
+      '<button class="big-btn" onclick="setupView=false;retryFac()">Back to Facilities</button>' +
+      '<button class="big-btn ghost" id="setup-go" onclick="runFacSetup()">Run setup again anyway</button><div class="small-note" id="setup-msg">Only needed if something looks broken. It never deletes anything.</div>';
+    return;
+  }
+  b.innerHTML = 'Facilities keeps its data in five SharePoint lists on the Facilities and Grounds site. Tap the button and the app creates what is missing, then loads the starter data (' +
     SEED.services.length + ' scheduled services for all four stations and ' + SEED.assets.length + ' building items for replacement planning).' +
     '<div style="margin-top:14px">' + rows.join('') + '</div>' +
     '<button class="big-btn" id="setup-go" onclick="runFacSetup()">Set up Facilities</button>' +
@@ -1265,20 +1295,20 @@ const ICONS = {
 };
 /* Phones get the input screens only. The dashboard, budget and planning live on the desktop (or anything 900px+ wide). */
 const LS_FULL = 'fg_full_admin_v1';
-function isDesk() { return window.innerWidth >= 900 || lsGet(LS_FULL, false) === true; }
+function isDesk() { return !isPhoneDevice() || lsGet(LS_FULL, false) === true; }
 const TABS_FULL = [['home', 'Overview'], ['dash', 'Dashboard'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']];
 const TABS_LITE = [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['bldg', 'Buildings']];
 const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']], get admin() { return isDesk() ? TABS_FULL : TABS_LITE; } };
 const FAC_TABS = ['home', 'wo', 'sched', 'money', 'bldg'];
 const PAGE_OF = { grd: 'all', bldg: 'money' };
 function deskNote() {
-  if (section !== 'admin' || window.innerWidth >= 900) return '';
-  if (lsGet(LS_FULL, false) === true) return '<div class="desk-note"><span>Showing full admin on a small screen.</span><button onclick="setFullAdmin(false)">Phone view</button></div>';
+  if (section !== 'admin' || !isPhoneDevice()) return '';
+  if (lsGet(LS_FULL, false) === true) return '<div class="desk-note"><span>Showing full admin on this phone.</span><button onclick="setFullAdmin(false)">Phone view</button></div>';
   return '<div class="desk-note"><span><b>Use desktop for full admin.</b> Dashboard, budget and planning open on a computer or in Teams.</span><button onclick="setFullAdmin(true)">Show here</button></div>';
 }
 function setFullAdmin(on) { lsSet(LS_FULL, !!on); if (TABS.admin.map(t => t[0]).indexOf(curTab) < 0) curTab = 'home'; switchTab(curTab); }
 let lastDesk = null;
-window.addEventListener('resize', () => { const d = isDesk(); if (lastDesk !== null && d !== lastDesk && section === 'admin') { if (TABS.admin.map(t => t[0]).indexOf(curTab) < 0) curTab = 'home'; switchTab(curTab); } lastDesk = d; });
+window.addEventListener('orientationchange', () => { const d = isDesk(); if (lastDesk !== null && d !== lastDesk && section === 'admin') { if (TABS.admin.map(t => t[0]).indexOf(curTab) < 0) curTab = 'home'; switchTab(curTab); } lastDesk = d; });
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   $('pg-' + name).classList.add('active');
@@ -1306,6 +1336,7 @@ function switchSection(s) {
   switchTab(s === 'crew' ? 'todo' : 'home');
 }
 function switchTab(t) {
+  setupView = false;
   if (t !== 'checks') leaveCheck();
   curTab = t;
   if (section === 'admin' && FAC_TABS.indexOf(t) >= 0 && facState !== 'ready') { showPage('facsetup'); renderTabbar(); renderFacSetup(); return; }
@@ -2270,7 +2301,7 @@ function checkState(stKey) {
 }
 function stationCheckRow(s) {
   const cs = checkState(s.key);
-  const sub = cs.state === 'draft' ? 'In progress on this phone' : cs.last ? 'Last: ' + mdy(cs.last.date) + ' by ' + cs.last.by + (cs.last.problems ? ' · ' + cs.last.problems + ' problem' + (cs.last.problems > 1 ? 's' : '') : ' · all OK') : 'Never done';
+  const sub = cs.state === 'draft' ? 'In progress on ' + devWord() : cs.last ? 'Last: ' + mdy(cs.last.date) + ' by ' + cs.last.by + (cs.last.problems ? ' · ' + cs.last.problems + ' problem' + (cs.last.problems > 1 ? 's' : '') : ' · all OK') : 'Never done';
   return '<div class="chk-station ' + cs.state + '" onclick="startCheck(\'' + esc(s.key) + '\')"><div class="bar"></div><div class="body"><b>' + esc(s.key) + '</b><span>' + esc(sub) + '</span></div>' +
     '<div class="go">' + (cs.state === 'draft' ? 'Resume' : cs.state === 'due' ? 'Due' : 'Start') + ' &rsaquo;</div></div>';
 }
@@ -2317,7 +2348,7 @@ function renderCheckForm() {
   const probs = Object.values(a).filter(r => r.s === 'bad');
   h += '<div class="wrap" style="margin-top:14px"><button class="big-btn" id="chk-submit" onclick="submitCheck()" ' + (answered < total ? 'disabled' : '') + '>Submit ' + answered + ' / ' + total +
     (probs.length ? ' &middot; ' + probs.length + ' problem' + (probs.length > 1 ? 's' : '') : '') + '</button>' +
-    (answered < total ? '<div class="small-note" style="text-align:center">Answer every line to submit. Your answers are saved on this phone as you go.</div>' : '') + '</div>';
+    (answered < total ? '<div class="small-note" style="text-align:center">Answer every line to submit. Your answers are saved on ' + devWord() + ' as you go.</div>' : '') + '</div>';
   $('checks-body').innerHTML = h;
   $('chk-progress-bar').style.width = Math.round(answered / total * 100) + '%';
 }
@@ -2353,7 +2384,7 @@ async function submitCheck() {
     lsDel(LS.draft + st); checkStation = null; checkDraft = null;
     saveCache(); renderChecks(); renderTabbar(); $('content').scrollTop = 0;
     toast('Walkthrough saved' + (made ? '. ' + made + ' work order' + (made > 1 ? 's' : '') + ' created' : '. All OK') + (crit ? '. Critical: call Dennis.' : ''), { ms: crit ? 8000 : 4000 });
-  } catch (e) { toast('Not saved: ' + (e.message || e) + '. Your answers are still on this phone.', { err: true, ms: 8000 }); btn.disabled = false; btn.textContent = 'Submit'; }
+  } catch (e) { toast('Not saved: ' + (e.message || e) + '. Your answers are still on ' + devWord() + '.', { err: true, ms: 8000 }); btn.disabled = false; btn.textContent = 'Submit'; }
 }
 
 /* ================= BUDGET + REPLACEMENT ================= */
@@ -2515,9 +2546,10 @@ function openInfo() {
   const who = account ? esc(account.name) + '<br><span style="font-size:12px;color:#555">' + esc(account.username) + ' &middot; ' + esc(roleLabel()) + '</span>' : 'Not signed in';
   $('info-body').innerHTML = '<div class="info-line"><b>Version ' + VERSION + '</b><br>Facilities: work orders, scheduled services, monthly walkthroughs, budget and replacement planning for Stations 51, 51.5, 52 and 50. Grounds: the Grounds Tracker. Everything saves to the Facilities and Grounds SharePoint site.</div>' +
     '<div class="info-line">Signed in as:<br><b>' + who + '</b></div>' +
+    (isManager() ? '<div class="info-line">' + (isPhoneDevice() ? '<b>Phone version.</b> Admin shows the input screens. ' + (lsGet(LS_FULL, false) === true ? 'Full admin is turned on here. <a href="#" onclick="closeInfo();setFullAdmin(false);return false">Switch to phone view</a>' : 'Dashboard and budget are on the desktop version. <a href="#" onclick="closeInfo();setFullAdmin(true);return false">Show full admin here</a>') : '<b>Desktop version.</b> Full admin, including Dashboard and Budget.') + (IN_FRAME ? ' Running inside Teams.' : '') + '</div>' : '') +
     '<div class="info-line" style="font-size:12px;color:#555">Critical problems: save the work order, then call Dennis. The app refreshes every ' + CONFIG.refreshSeconds + ' seconds and when you open it.</div>' +
     '<div class="info-line" style="font-size:12px;color:#555">Questions? Contact Doug: <a href="mailto:d.boyce@northcountryems.org?subject=FACILITIES%20APP">d.boyce@northcountryems.org</a></div>' +
-    (isManager() && !DEMO ? '<button class="big-btn ghost" onclick="closeInfo();facState=\'missing\';switchSection(\'admin\')">Check facilities setup</button>' : '') +
+    (isManager() && !DEMO ? '<button class="big-btn ghost" onclick="openSetupCheck()">Check facilities setup</button>' : '') +
     (account ? '<button class="big-btn red" onclick="signOut()">Sign out</button>' : '');
   $('info-ov').classList.add('show');
 }
@@ -2525,7 +2557,9 @@ function closeInfo() { $('info-ov').classList.remove('show'); }
 function saveSetup() { const v = $('setup-cid').value.trim(); if (!/^[0-9a-f-]{36}$/i.test(v)) { toast('That does not look like a Client ID', { err: true }); return; } lsSet(LS.cid, v); location.reload(); }
 
 async function boot() {
+  if (IS_AUTH_POPUP) { document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px">Signing in...</p>'; return; }
   $('hub-link').href = CONFIG.hubUrl;
+  if (IN_FRAME && $('open-browser')) $('open-browser').style.display = 'inline-block';
   weekFilter = lsGet(LS.filter, 'all');
   crewStation = lsGet(LS.crewSt, '');
   const startSection = () => isManager() ? (lsGet(LS.section, 'admin') === 'crew' ? 'crew' : 'admin') : 'crew';
