@@ -2787,7 +2787,7 @@ async function boot() {
   weekFilter = lsGet(LS.filter, 'all');
   crewStation = lsGet(LS.crewSt, '');
   crewArea = lsGet(LS.area, '') || 'fac';
-  const startSection = () => { if (!lsGet(LS.area, '') && isGroundsWorker()) crewArea = 'grd'; return isManager() && lsGet(LS.section, 'admin') !== 'crew' ? 'admin' : crewArea; };
+  const startSection = () => { if (!lsGet(LS.area, '') && isGroundsWorker()) crewArea = 'grd'; return isManager() && lsGet(LS.section, isFacWorker() ? 'crew' : 'admin') !== 'crew' ? 'admin' : crewArea; };
   if (DEMO) {
     setupDemo();
     facState = 'ready';
