@@ -436,6 +436,47 @@
   .desk-note b { color:var(--info); }
   .desk-note button { margin-left:auto; flex:none; border:2px solid var(--info); background:#fff; color:var(--info); border-radius:8px; padding:7px 10px; font-weight:800; font-size:11px; cursor:pointer; }
   .desk-slot:empty { display:none; }
+
+  /* fill in */
+  .setup-row.tap { cursor:pointer; } .setup-row.tap:hover { background:#f6faf6; } .setup-row u { color:var(--info); font-weight:800; }
+  .fill-cta { background:#fff; border-radius:12px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.07); border-left:6px solid var(--warn); }
+  .fill-cta b { display:block; font-size:14px; } .fill-cta span { display:block; font-size:12px; color:var(--text-muted); margin:4px 0 8px; }
+  .fill-guide { margin:12px 12px 0; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); padding:16px; }
+  .fg-head b { display:block; font-size:18px; color:var(--g-deep); } .fg-head span { display:block; font-size:13px; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+  .fg-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+  .fg-step { border:2px solid var(--border); border-radius:10px; padding:10px 12px; cursor:pointer; background:#fff; }
+  .fg-step.on { border-color:var(--g-mid); background:var(--g-pale); }
+  .fg-step em { display:block; font-style:normal; font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--g-mid); }
+  .fg-step b { display:block; font-size:14px; margin-top:2px; } .fg-step span { display:block; font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .fg-how { margin-top:14px; font-size:13px; line-height:1.45; }
+  .fg-how summary { cursor:pointer; font-weight:800; color:var(--g-deep); }
+  .fg-how ol { margin:8px 0 6px 18px; padding:0; } .fg-how li { margin-bottom:5px; } .fg-how p { margin:6px 0 0; color:var(--text-muted); }
+  .fill-st { margin:12px 12px 0; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); overflow:hidden; }
+  .fill-sh { background:linear-gradient(135deg,var(--g-deep) 0%,var(--g-mid) 100%); color:#fff; padding:10px 14px; display:flex; gap:10px; align-items:baseline; }
+  .fill-sh b { font-size:14px; letter-spacing:1px; text-transform:uppercase; } .fill-sh span { font-size:11px; opacity:.85; }
+  .fill-hd { display:none; }
+  .fill-row { display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; padding:12px 14px; border-bottom:1px solid #eef2ee; align-items:end; }
+  .fill-row.off { background:#f4f4f4; } .fill-row.off .fr-f { opacity:.45; }
+  .fr-name { grid-column:1 / -1; } .fr-name b { display:block; font-size:14px; } .fr-name span { font-size:11px; color:var(--text-muted); }
+  .fr-f { display:flex; flex-direction:column; gap:3px; font-size:12px; min-width:0; }
+  .fr-f i { font-style:normal; font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
+  .fr-f input, .fr-f select { width:100%; box-sizing:border-box; border:2px solid var(--border); border-radius:8px; padding:8px; font:inherit; font-size:14px; background:#fff; min-width:0; }
+  .fr-f input:focus, .fr-f select:focus { outline:none; border-color:var(--g-mid); }
+  .fr-date { display:flex; gap:6px; } .fr-date input { flex:1; }
+  .fr-mini { border:2px solid var(--border); background:#fff; border-radius:8px; font-size:11px; font-weight:800; padding:0 8px; cursor:pointer; color:var(--text-muted); }
+  .fr-act { display:flex; align-items:center; gap:8px; }
+  .fr-na { border:2px solid #c9d2c9; background:#fff; border-radius:8px; padding:8px 12px; font-weight:800; font-size:12px; cursor:pointer; color:#666; }
+  .fr-na.on { border-color:var(--g-mid); color:var(--g-mid); }
+  .fs { font-size:11px; font-weight:800; min-width:60px; } .fs.saving { color:var(--warn); } .fs.ok { color:var(--g-mid); } .fs.err { color:var(--bad); }
+  @media (min-width:900px) {
+    .fill-guide, .fill-st { max-width:1180px; margin-left:auto; margin-right:auto; }
+    .fill-hd { display:grid; gap:10px; padding:8px 14px; background:#f3f6f3; font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
+    .fill-hd.svc, .fill-row.svc { grid-template-columns:2.2fr 1.1fr 1.6fr 1.4fr 0.9fr 1fr; }
+    .fill-hd.asset, .fill-row.asset { grid-template-columns:2.2fr 1fr 0.8fr 1fr 1fr 1fr; }
+    .fill-row { gap:10px; align-items:center; padding:8px 14px; }
+    .fr-name { grid-column:auto; } .fr-f i { display:none; }
+  }
+  @media (max-width:600px) { .fg-steps { grid-template-columns:1fr; } }
 </style>
 </head>
 
@@ -526,6 +567,11 @@
   <div class="page" id="pg-dash">
     <div id="dash-body"></div>
     <div class="sync-line" id="sync-dash"></div>
+  </div>
+
+  <!-- ADMIN: FILL IN (desktop) -->
+  <div class="page" id="pg-fill">
+    <div id="fill-body"></div>
   </div>
 
   <!-- FACILITIES: WORK ORDERS -->
@@ -634,7 +680,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.3';
+const VERSION = '2.4';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -1047,6 +1093,7 @@ const API = {
   async facAddColumn(listId, col) { const sid = await getSiteId(); return graph('/sites/' + sid + '/lists/' + listId + '/columns', { method: 'POST', json: col }); },
   async facItems(k) { const sid = await getSiteId(); return (await graphAll('/sites/' + sid + '/lists/' + facIds[k] + '/items?$expand=fields&$top=999')).map(MAP[k]); },
   async facCreate(k, fields) { const sid = await getSiteId(); const it = await graph('/sites/' + sid + '/lists/' + facIds[k] + '/items', { method: 'POST', json: { fields } }); return MAP[k](it); },
+  async facDelete(k, id) { const sid = await getSiteId(); return graph('/sites/' + sid + '/lists/' + facIds[k] + '/items/' + id, { method: 'DELETE' }); },
   async facUpdate(k, id, fields) { const sid = await getSiteId(); return graph('/sites/' + sid + '/lists/' + facIds[k] + '/items/' + id + '/fields', { method: 'PATCH', json: fields }); },
   async facBatch(k, rows, onProgress) {
     const sid = await getSiteId();
@@ -1098,11 +1145,12 @@ async function renderFacSetup() {
       catch (e) { state = 'part'; extra = e.message; }
     }
     states.push(state);
-    rows.push('<div class="setup-row"><span class="ok-dot ' + (state === 'ok' ? '' : state) + '"></span><b>' + esc(FAC[k].name) + '</b><span>' + (state === 'ok' ? 'Ready' : state === 'part' ? esc(extra) : 'Not created') + '</span></div>');
+    const go = { wo: "switchTab('wo')", svc: "openFill('svc')", asset: "openFill('asset')", chk: "switchSection('crew');switchTab('checks')", bud: "moneyView='plan';switchTab('money')" }[k];
+    rows.push('<div class="setup-row tap" onclick="setupView=false;' + go + '"><span class="ok-dot ' + (state === 'ok' ? '' : state) + '"></span><b>' + esc(FAC[k].name) + '</b><span>' + (state === 'ok' ? (k === 'svc' || k === 'asset' ? 'Ready · <u>Fill in</u>' : 'Ready · <u>Open</u>') : state === 'part' ? esc(extra) : 'Not created') + '</span></div>');
   }
   const allOk = states.every(x => x === 'ok');
   if (allOk) {
-    b.innerHTML = '<b style="color:var(--g-mid)">Everything is set up.</b> All five SharePoint lists are there with every column, so there is nothing to fix.' +
+    b.innerHTML = '<b style="color:var(--g-mid)">Everything is set up.</b> All five SharePoint lists are there with every column. Tap a list to open it. Services and building items open the fill-in screen' + (isPhoneDevice() ? ', which works best on a computer.' : '.') +
       '<div style="margin-top:14px">' + rows.join('') + '</div>' +
       '<button class="big-btn" onclick="setupView=false;retryFac()">Back to Facilities</button>' +
       '<button class="big-btn ghost" id="setup-go" onclick="runFacSetup()">Run setup again anyway</button><div class="small-note" id="setup-msg">Only needed if something looks broken. It never deletes anything.</div>';
@@ -1208,6 +1256,7 @@ function setupDemo() {
     .forEach(b => add('bud', { Title: b[1] + ' | ' + b[2] + ' | ' + b[0], BudgetYear: b[0], Station: b[1], Category: b[2], Amount: b[3], BStatus: 'Approved' }));
   API.facItems = async k => { await sleep(120); return db[k].map(it => MAP[k](JSON.parse(JSON.stringify(it)))); };
   API.facCreate = async (k, fields) => { await sleep(150); return MAP[k](JSON.parse(JSON.stringify(add(k, fields)))); };
+  API.facDelete = async (k, id) => { await sleep(120); db[k] = db[k].filter(i => i.id !== id); };
   API.facUpdate = async (k, id, fields) => { await sleep(120); const it = db[k].find(i => i.id === id); Object.assign(it.fields, fields); return it.fields; };
   API.facBatch = async (k, rows) => { for (const r of rows) { if (r.id) await API.facUpdate(k, r.id, r.fields); else add(k, r.fields); } return { done: rows.length, failed: 0 }; };
   const who = { nick: ['Nick Stafford', 'n.stafford@northcountryems.org'], tyler: ['Tyler Komm', 't.komm@northcountryems.org'], bryce: ['Bryce Shirley', 'b.shirley@northcountryems.org'],
@@ -1290,13 +1339,14 @@ const ICONS = {
   money: '<path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   todo: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16.5 9"/>',
   dash: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  fill: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
   bldg: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
   grd: '<path d="M12 22V12"/><path d="M12 12C12 7 8 4 3 4c0 5 4 8 9 8z"/><path d="M12 15c0-4 3-7 8-7 0 4-3 7-8 7z"/>'
 };
 /* Phones get the input screens only. The dashboard, budget and planning live on the desktop (or anything 900px+ wide). */
 const LS_FULL = 'fg_full_admin_v1';
 function isDesk() { return !isPhoneDevice() || lsGet(LS_FULL, false) === true; }
-const TABS_FULL = [['home', 'Overview'], ['dash', 'Dashboard'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']];
+const TABS_FULL = [['home', 'Overview'], ['dash', 'Dashboard'], ['fill', 'Fill In'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['money', 'Budget']];
 const TABS_LITE = [['home', 'Overview'], ['wo', 'Work'], ['sched', 'Schedule'], ['grd', 'Grounds'], ['bldg', 'Buildings']];
 const TABS = { crew: [['todo', 'To Do'], ['checks', 'Walkthrough']], get admin() { return isDesk() ? TABS_FULL : TABS_LITE; } };
 const FAC_TABS = ['home', 'wo', 'sched', 'money', 'bldg'];
@@ -1312,7 +1362,7 @@ window.addEventListener('orientationchange', () => { const d = isDesk(); if (las
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   $('pg-' + name).classList.add('active');
-  const tabbed = ['todo', 'home', 'dash', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
+  const tabbed = ['todo', 'home', 'dash', 'fill', 'wo', 'sched', 'checks', 'money', 'all', 'facsetup'].indexOf(name) >= 0;
   document.body.classList.toggle('no-tabs', !tabbed);
   document.body.classList.toggle('no-seg', ['setup', 'signin'].indexOf(name) >= 0 || !isManager());
   $('refresh-btn').style.display = tabbed ? '' : 'none';
@@ -1342,6 +1392,7 @@ function switchTab(t) {
   if (section === 'admin' && FAC_TABS.indexOf(t) >= 0 && facState !== 'ready') { showPage('facsetup'); renderTabbar(); renderFacSetup(); return; }
   showPage(PAGE_OF[t] || t);
   render();
+  if (t === 'fill') renderFill();
   $('content').scrollTop = 0;
 }
 function render() {
@@ -1351,6 +1402,7 @@ function render() {
   else if (curTab === 'checks') renderChecks();
   else if (curTab === 'grd') renderAll();
   else if (curTab === 'dash') renderDash();
+  else if (curTab === 'fill') { if (!document.querySelector('#fill-body .fill-row')) renderFill(); }
   else if (facState === 'ready' && FAC_TABS.indexOf(curTab) >= 0 && pageActive(PAGE_OF[curTab] || curTab)) ({ home: renderHome, wo: renderWo, sched: renderSched, money: renderMoney, bldg: renderMoney })[curTab]();
   document.querySelectorAll('.desk-slot').forEach(el => el.innerHTML = deskNote());
   const s = lastSync ? 'Updated ' + timeStr(lastSync) : '';
@@ -1774,7 +1826,10 @@ function renderHome() {
   const needChk = FSTATIONS.filter(s => checkState(s.key).state !== 'ok');
   if (needChk.length) h += '<div class="section-label">Monthly walkthrough due</div>' + needChk.map(stationCheckRow).join('');
   const needDates = active.filter(s => svcState(s) === 'need').length;
-  if (needDates && canEditPlans()) h += '<div class="section-label">Getting started</div>' + emptyBox(needDates + ' scheduled services still need a "last done" date. Open Schedule, tap a service, and fill it in so the due dates work.');
+  const needA = fac.asset.filter(assetMissing).length;
+  if ((needDates || needA) && canEditPlans()) h += '<div class="section-label">Getting started</div><div class="wrap"><div class="fill-cta"><b>' + needDates + ' services need a last done date' + (needA ? ', ' + needA + ' building items need age or cost' : '') + '</b><span>' +
+    (isPhoneDevice() ? 'Use a computer for this one. Open the app there and go to Admin &gt; Fill In for step by step directions.' : 'The fill-in screen walks through it step by step and saves as you go.') + '</span>' +
+    (isPhoneDevice() ? '' : '<button class="big-btn" onclick="openFill(\'svc\')">Open Fill In</button>') + '</div></div>';
   h += homeGroundsHtml();
   $('home-lists').innerHTML = h;
 }
@@ -1924,7 +1979,7 @@ function renderSched() {
   const active = fac.svc.filter(s => s.active);
   const cnt = st => active.filter(s => svcState(s) === st).length;
   $('sc-chips').innerHTML = chipHtml([['due', 'Due (' + (cnt('over') + cnt('soon')) + ')'], ['high', 'High importance'], ['need', 'Need date'], ['all', 'All'], ['off', 'Turned off']], scFilter, 'setScFilter') +
-    (canEditPlans() ? '<button class="chip" onclick="newSvc()">+ Add</button>' : '');
+    (canEditPlans() ? '<button class="chip" onclick="newSvc()">+ Add</button>' : '') + (canEditPlans() && !isPhoneDevice() ? '<button class="chip" onclick="openFill(\'svc\')">Fill in all</button>' : '');
   $('sc-summary').innerHTML = '<div class="sum od"><b>' + cnt('over') + '</b><span>Overdue</span></div><div class="sum ip"><b>' + cnt('soon') + '</b><span>Due 30d</span></div>' +
     '<div class="sum"><b>' + cnt('need') + '</b><span>Need date</span></div><div class="sum dn"><b>' + cnt('ok') + '</b><span>OK</span></div>';
   const q = ($('sc-search').value || '').trim().toLowerCase();
@@ -2290,6 +2345,136 @@ document.addEventListener('click', e => { if (curTab === 'dash') dashTip(e); });
 </script>
 
 <script>
+/* ================= FILL IN: fast data entry for Dennis (services + building items) ================= */
+let fillKind = 'svc', fillStation = '', fillBlanks = false;
+function openFill(kind) {
+  if (kind) fillKind = kind;
+  if (section !== 'admin') switchSection('admin');
+  curTab = 'fill'; setupView = false;
+  showPage('fill'); renderTabbar(); renderFill();
+  $('content').scrollTop = 0;
+}
+function setFill(k, v) { if (k === 'kind') fillKind = v; if (k === 'st') fillStation = v; if (k === 'blank') fillBlanks = !fillBlanks; renderFill(); }
+function fillStatus(id, state, msg) {
+  const el = document.querySelector('[data-fs="' + id + '"]'); if (!el) return;
+  el.className = 'fs ' + state; el.textContent = state === 'saving' ? 'Saving' : state === 'ok' ? 'Saved' : state === 'err' ? 'Not saved' : '';
+  if (msg) el.title = msg;
+}
+function svcMissing(s) { return s.active && (!s.lastDone || !s.vendor); }
+function assetMissing(a) { return !a.installYear || !a.life || !a.cost || !a.condition; }
+function renderFill() {
+  if (facState !== 'ready') { $('fill-body').innerHTML = emptyBox('Facilities is not loaded yet.'); return; }
+  const isSvc = fillKind === 'svc';
+  const all = isSvc ? fac.svc : fac.asset;
+  const blanks = all.filter(x => isSvc ? svcMissing(x) : assetMissing(x)).length;
+  const doneS = fac.svc.filter(x => !svcMissing(x)).length, doneA = fac.asset.filter(x => !assetMissing(x)).length;
+  const pct = (d, t) => t ? Math.round(d / t * 100) : 100;
+  let h = '<div class="fill-guide"><div class="fg-head"><b>Facilities fill-in</b><span>This is the information the dashboard, the morning email, the budget plan and the Excel log run on. Do it once on a computer. It saves every box as you go, so you can stop and come back anytime.</span></div>' +
+    '<div class="fg-steps">' +
+    '<div class="fg-step' + (isSvc ? ' on' : '') + '" onclick="setFill(\'kind\',\'svc\')"><em>Step 1</em><b>Building services</b><span>' + doneS + ' of ' + fac.svc.length + ' complete</span><div class="meter"><div style="width:' + pct(doneS, fac.svc.length) + '%"></div></div></div>' +
+    '<div class="fg-step' + (!isSvc ? ' on' : '') + '" onclick="setFill(\'kind\',\'asset\')"><em>Step 2</em><b>Building items</b><span>' + doneA + ' of ' + fac.asset.length + ' complete</span><div class="meter"><div style="width:' + pct(doneA, fac.asset.length) + '%"></div></div></div>' +
+    '<div class="fg-step" onclick="moneyView=\'plan\';switchTab(\'money\')"><em>Step 3</em><b>' + (new Date().getFullYear() + 1) + ' budget plan</b><span>After steps 1 and 2: Budget &gt; Plan &gt; Fill suggested</span></div></div>' +
+    '<details class="fg-how" open><summary>How to fill this out</summary>' + (isSvc
+      ? '<ol><li><b>How often</b>: how often it is supposed to happen. Change it if ours is different.</li>' +
+        '<li><b>Last done</b>: the date it was last done. Look at the inspection tag or sticker on the equipment, the last invoice, or vendor email. A best guess is fine. If nobody knows, tap <b>Unknown</b> and it will show as needing a date.</li>' +
+        '<li><b>Vendor / who</b>: the company that does it, or "Nick" if we do it in house.</li>' +
+        '<li><b>Cost each time</b>: about what one visit costs, from the last invoice. Leave blank if it is free or in house.</li>' +
+        '<li><b>N/A</b>: the building does not have this (for example no generator at 51.5). It comes off the schedule and you can turn it back on.</li></ol>'
+      : '<ol><li><b>Year installed</b>: when it was installed or last replaced. Check the data plate or sticker, permits, or ask. A best guess is fine.</li>' +
+        '<li><b>Life (yrs)</b>: how many years it should last. We filled in a typical number. Change it if you know better.</li>' +
+        '<li><b>Replace cost</b>: rough cost to replace today, installed. A recent quote or ballpark is fine.</li>' +
+        '<li><b>Condition</b>: Good, Fair, Poor or Failing, from what you see.</li>' +
+        '<li><b>N/A</b>: the building does not have this item. It comes off the list.</li></ol>') +
+      '<p>Use <b>Tab</b> to move box to box. A green <b>Saved</b> shows on each row as it saves. <b>Only missing info</b> hides the rows that are done.</p></details></div>';
+  h += '<div class="chips" style="padding-top:0">' + chipHtml([['', 'All stations']].concat(FSTATIONS.map(s => [s.key, s.key.replace('Station ', 'Sta ')])), fillStation, "(v=>setFill('st',v))") +
+    '<button class="chip' + (fillBlanks ? ' on' : '') + '" onclick="setFill(\'blank\')">Only missing info (' + blanks + ')</button></div>';
+  FSTATIONS.filter(s => !fillStation || s.key === fillStation).forEach(st => {
+    let items = all.filter(x => x.station === st.key);
+    if (fillBlanks) items = items.filter(x => isSvc ? svcMissing(x) : assetMissing(x));
+    if (!items.length) return;
+    items.sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.title.localeCompare(b.title));
+    h += '<div class="fill-st"><div class="fill-sh"><b>' + esc(st.key) + '</b><span>' + esc(st.addr) + '</span></div>' +
+      (isSvc ? '<div class="fill-hd svc"><span>Service</span><span>How often</span><span>Last done</span><span>Vendor / who</span><span>Cost each time</span><span></span></div>'
+             : '<div class="fill-hd asset"><span>Item</span><span>Year installed</span><span>Life (yrs)</span><span>Replace cost</span><span>Condition</span><span></span></div>') +
+      items.map(x => isSvc ? fillSvcRow(x) : fillAssetRow(x)).join('') + '</div>';
+  });
+  if (fillBlanks && !blanks) h += emptyBox('Nothing missing. Nice work.');
+  h += '<div class="small-note" style="text-align:center;padding:14px">Everything here saves straight to SharePoint as you leave each box.</div>';
+  $('fill-body').innerHTML = h;
+}
+function dIn(d) { if (!d) return ''; const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }
+function fillSvcRow(s) {
+  const next = svcNext(s), off = !s.active;
+  return '<div class="fill-row svc' + (off ? ' off' : '') + '" data-id="' + s.id + '">' +
+    '<div class="fr-name"><b>' + esc(s.title) + '</b><span>' + esc(s.category) + (off ? ' · N/A, not on the schedule' : next ? ' · next due ' + mdy(next) : ' · no due date yet') + '</span></div>' +
+    '<label class="fr-f"><i>How often</i><select onchange="fillSvc(\'' + s.id + '\',\'freq\',this.value)">' + FREQS.map(f => '<option' + (f[0] === s.freq ? ' selected' : '') + '>' + esc(f[0]) + '</option>').join('') + '</select></label>' +
+    '<label class="fr-f"><i>Last done</i><span class="fr-date"><input type="date" value="' + dIn(s.lastDone) + '" max="' + dIn(new Date()) + '" onchange="fillSvc(\'' + s.id + '\',\'lastDone\',this.value)">' +
+      '<button type="button" class="fr-mini" onclick="fillSvc(\'' + s.id + '\',\'lastDone\',\'\');this.previousElementSibling.value=\'\'">Unknown</button></span></label>' +
+    '<label class="fr-f"><i>Vendor / who</i><input type="text" value="' + esc(s.vendor) + '" placeholder="Vendor or Nick" onchange="fillSvc(\'' + s.id + '\',\'vendor\',this.value)"></label>' +
+    '<label class="fr-f"><i>Cost each time</i><input type="number" inputmode="decimal" min="0" step="1" value="' + (s.est || '') + '" placeholder="$" onchange="fillSvc(\'' + s.id + '\',\'est\',this.value)"></label>' +
+    '<div class="fr-act"><button type="button" class="fr-na' + (off ? ' on' : '') + '" onclick="fillSvc(\'' + s.id + '\',\'active\',' + (off ? 'true' : 'false') + ')">' + (off ? 'Turn on' : 'N/A') + '</button><span class="fs" data-fs="' + s.id + '"></span></div></div>';
+}
+function fillAssetRow(a) {
+  const ry = assetReplaceYear(a);
+  return '<div class="fill-row asset" data-id="' + a.id + '">' +
+    '<div class="fr-name"><b>' + esc(a.title) + '</b><span>' + esc(a.category) + (ry ? ' · replace about ' + ry : '') + '</span></div>' +
+    '<label class="fr-f"><i>Year installed</i><input type="number" inputmode="numeric" min="1900" max="' + (new Date().getFullYear() + 1) + '" value="' + (a.installYear || '') + '" placeholder="e.g. 2012" onchange="fillAsset(\'' + a.id + '\',\'installYear\',this.value)"></label>' +
+    '<label class="fr-f"><i>Life (yrs)</i><input type="number" inputmode="numeric" min="1" max="100" value="' + (a.life || '') + '" onchange="fillAsset(\'' + a.id + '\',\'life\',this.value)"></label>' +
+    '<label class="fr-f"><i>Replace cost</i><input type="number" inputmode="decimal" min="0" step="1" value="' + (a.cost || '') + '" placeholder="$" onchange="fillAsset(\'' + a.id + '\',\'cost\',this.value)"></label>' +
+    '<label class="fr-f"><i>Condition</i><select onchange="fillAsset(\'' + a.id + '\',\'condition\',this.value)"><option value="">Pick</option>' + CONDS.map(c => '<option' + (c === a.condition ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></label>' +
+    '<div class="fr-act"><button type="button" class="fr-na" onclick="fillAssetNA(\'' + a.id + '\')">N/A</button><span class="fs" data-fs="' + a.id + '"></span></div></div>';
+}
+async function fillSvc(id, k, v) {
+  const s = fac.svc.find(x => x.id === id); if (!s) return;
+  const patch = {};
+  if (k === 'lastDone') patch.lastDone = v ? new Date(v + 'T12:00:00') : null;
+  else if (k === 'est') patch.est = v === '' ? null : Math.max(0, Number(v) || 0);
+  else if (k === 'active') patch.active = v === true || v === 'true';
+  else patch[k] = String(v).trim();
+  const before = Object.assign({}, s);
+  Object.assign(s, patch);
+  const m = freqMonths(s.freq), next = s.lastDone && m ? addMonths(s.lastDone, m) : null;
+  s.nextDue = next;
+  const fields = { LastDone: s.lastDone ? localNoonISO(s.lastDone) : null, NextDue: next ? localNoonISO(next) : null, Frequency: s.freq, Vendor: s.vendor || null, EstCost: s.est, Active: s.active };
+  fillStatus(id, 'saving');
+  try {
+    await API.facUpdate('svc', id, fields); saveCache(); fillStatus(id, 'ok');
+    if (k === 'active' || k === 'lastDone' || k === 'freq') { const row = document.querySelector('.fill-row[data-id="' + id + '"]'); if (row) { row.outerHTML = fillSvcRow(s); fillStatus(id, 'ok'); } }
+  } catch (e) { Object.assign(s, before); fillStatus(id, 'err', e.message); toast('Not saved: ' + (e.message || e), { err: true, ms: 6000 }); }
+}
+async function fillAsset(id, k, v) {
+  const a = fac.asset.find(x => x.id === id); if (!a) return;
+  const before = Object.assign({}, a);
+  if (k === 'condition') a.condition = v;
+  else { const n = v === '' ? null : Number(v); if (n != null && (!isFinite(n) || n < 0)) { fillStatus(id, 'err'); toast('That number looks wrong', { err: true }); return; }
+    if (k === 'installYear' && n != null && (n < 1900 || n > new Date().getFullYear() + 1)) { fillStatus(id, 'err'); toast('Year installed looks wrong', { err: true }); return; }
+    a[k] = n; }
+  fillStatus(id, 'saving');
+  try {
+    await API.facUpdate('asset', id, { InstallYear: a.installYear, LifeYears: a.life, ReplaceCost: a.cost, Condition: a.condition || null });
+    saveCache(); fillStatus(id, 'ok');
+    const row = document.querySelector('.fill-row[data-id="' + id + '"] .fr-name span'); const ry = assetReplaceYear(a);
+    if (row) row.textContent = a.category + (ry ? ' · replace about ' + ry : '');
+  } catch (e) { Object.assign(a, before); fillStatus(id, 'err', e.message); toast('Not saved: ' + (e.message || e), { err: true, ms: 6000 }); }
+}
+function fillAssetNA(id) {
+  const a = fac.asset.find(x => x.id === id); if (!a) return;
+  openModal('Remove this item?', '<div style="font-size:15px;line-height:1.45"><b>' + esc(a.title) + '</b> at ' + esc(a.station) + ' will come off the building list. Use this when the building doesn\'t have one. You can add it back later with + Add on the Buildings screen.</div>',
+    '<button class="big-btn ghost" onclick="closeModal()">Keep it</button><button class="big-btn red" onclick="fillAssetRemove(\'' + id + '\')">Remove</button>', 'red');
+}
+async function fillAssetRemove(id) {
+  closeModal();
+  fillStatus(id, 'saving');
+  try {
+    await API.facDelete('asset', id);
+    fac.asset = fac.asset.filter(x => x.id !== id); saveCache();
+    const row = document.querySelector('.fill-row[data-id="' + id + '"]'); if (row) row.remove();
+    toast('Removed');
+  } catch (e) { fillStatus(id, 'err', e.message); toast('Not removed: ' + (e.message || e), { err: true, ms: 6000 }); }
+}
+</script>
+
+<script>
 /* ================= CHECKS (monthly walkthrough) ================= */
 function checkGroups(stKey) { const s = fst(stKey); return WALK.concat([s && s.bays ? WALK_BAYS : WALK_MOD]); }
 function lastCheck(stKey) { return fac.chk.filter(c => c.station === stKey).sort((a, b) => (b.date || 0) - (a.date || 0))[0] || null; }
@@ -2452,7 +2637,7 @@ function replacementCard(y0) {
 }
 function renderAssets() {
   const y0 = new Date().getFullYear();
-  let h = canEditPlans() ? '<div class="wrap"><button class="big-btn ghost" style="margin-top:8px;min-height:52px" onclick="newAsset()">+ Add a building item</button></div>' : '';
+  let h = canEditPlans() ? '<div class="wrap"><button class="big-btn ghost" style="margin-top:8px;min-height:52px" onclick="newAsset()">+ Add a building item</button>' + (!isPhoneDevice() ? '<button class="big-btn" style="margin-top:8px;min-height:52px" onclick="openFill(\'asset\')">Fill in all building items</button>' : '<div class="small-note">Filling in lots of items? Use Admin &gt; Fill In on a computer.</div>') + '</div>' : '';
   h += FSTATIONS.map(s => {
     const items = fac.asset.filter(a => a.station === s.key).sort((a, b) => (assetReplaceYear(a) || 9999) - (assetReplaceYear(b) || 9999));
     if (!items.length) return '';

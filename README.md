@@ -7,7 +7,7 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.3**
+**Version 2.4**
 
 ## Links
 
@@ -122,6 +122,12 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. iOS caches hard: delete the home screen icon and add it again after every update.
 
 ## Changelog
+
+### v2.4
+- Admin > **Fill In** (desktop): step by step screen to enter last done, vendor and cost for every service, and year installed, life, replacement cost and condition for every building item. Saves each box as you go. N/A turns a service off or removes an item. Progress bars per step.
+- Info > Check facilities setup: each list opens the right screen
+- Overview shows a Getting started box that points to Fill In (on a phone it says to use a computer)
+- Playwright test: 60 checks
 
 ### v2.3
 - Phone vs desktop now detected by device, so a narrow window on a PC still gets full admin
