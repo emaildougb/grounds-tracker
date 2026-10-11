@@ -681,7 +681,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.5';
+const VERSION = '2.6';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -724,6 +724,10 @@ const FSTATIONS = [
   { key: 'Station 50',   addr: '30916 NE Sunset Falls Rd, Yacolt',   use: 'Fire sub station, Sunset Falls',  ncems: 0.00, bays: true }
 ];
 const FSKEYS = FSTATIONS.map(s => s.key);
+/* Kim's account codes (NCEMS 2025 Final Budget Breakdown). Fund 6270 = Operating, 6273 = Capital Outlay / Reserve. */
+const BUD_LINES = [['330', 'Building supplies', '6270'], ['410', 'Professional services', '6270'], ['420', 'Communications', '6270'], ['455', 'Rental and lease', '6270'],
+  ['470', 'Public utility service', '6270'], ['480', 'Repair and maintenance', '6270'], ['594620', 'Capital: building and equipment', '6273']];
+const blabel = code => { const l = BUD_LINES.find(x => x[0] === code); return l ? l[0] + ' ' + l[1] : code; };
 const CATS = ['HVAC', 'Fire and life safety', 'Electrical and generator', 'Plumbing and water', 'Doors and bays', 'Roof and exterior', 'Interior', 'Pest control', 'Other'];
 const FREQS = [['Monthly', 1], ['Quarterly', 3], ['Every 6 months', 6], ['Annual', 12], ['Every 2 years', 24], ['Every 3 years', 36], ['Every 5 years', 60]];
 const PRIOS = ['Critical', 'Urgent', 'Routine'];
@@ -754,7 +758,7 @@ const FAC = {
   asset: { name: 'Facility Assets', cols: [C.choice('Station', FSKEYS), C.choice('Category', CATS), C.text('Location'), C.text('Make'), C.text('Model'), C.text('Serial'),
            C.num('InstallYear'), C.num('LifeYears'), C.cur('ReplaceCost'), C.choice('Condition', CONDS), C.choice('Importance', IMPS), C.note('Notes')] },
   chk:   { name: 'Facility Checks', cols: [C.choice('Station', FSKEYS), C.date('CheckDate'), C.text('DoneBy'), C.num('Problems'), C.note('Results')] },
-  bud:   { name: 'Facility Budget', cols: [C.num('BudgetYear'), C.choice('Station', FSKEYS), C.choice('Category', CATS), C.cur('Amount'), C.choice('BStatus', BSTAT), C.text('BNote')] }
+  bud:   { name: 'Facility Budget', cols: [C.num('BudgetYear'), C.choice('Station', FSKEYS), C.choice('Category', CATS), C.cur('Amount'), C.choice('BStatus', BSTAT), C.text('BNote'), C.text('BudgetLine')] }
 };
 const FAC_KEYS = Object.keys(FAC);
 
@@ -1026,7 +1030,7 @@ const MAP = {
   },
   bud(it) {
     const f = it.fields || {};
-    return { id: String(it.id), year: num(f.BudgetYear), station: f.Station || '', category: f.Category || '', amount: num(f.Amount) || 0, status: f.BStatus || 'Draft', note: f.BNote || '' };
+    return { id: String(it.id), year: num(f.BudgetYear), station: f.Station || '', category: f.Category || '', line: String(f.BudgetLine || '').split(' ')[0], amount: num(f.Amount) || 0, status: f.BStatus || 'Draft', note: f.BNote || '' };
   }
 };
 /* service derived values */
@@ -1253,8 +1257,8 @@ function setupDemo() {
   add('wo', { Title: 'Pest control quarterly', Station: 'Station 50', Category: 'Pest control', Priority: 'Routine', WOStatus: WOS.DONE, WorkType: 'Scheduled maintenance', AssignedToOther: 'Orkin', ActualCost: 120, DateDone: addDays(t, -30).toISOString() }, addDays(t, -31));
   add('chk', { Title: 'Station 52 walkthrough', Station: 'Station 52', CheckDate: addDays(t, -12).toISOString(), DoneBy: 'Nick Stafford', Problems: 1, Results: '[]' });
   add('chk', { Title: 'Station 51 walkthrough', Station: 'Station 51', CheckDate: addDays(t, -40).toISOString(), DoneBy: 'Nick Stafford', Problems: 0, Results: '[]' });
-  [[y, 'Station 51', 'HVAC', 4000], [y, 'Station 51', 'Electrical and generator', 2500], [y, 'Station 52', 'Doors and bays', 3000], [y, 'Station 52', 'HVAC', 2000], [y, 'Station 50', 'Pest control', 600], [y, 'Station 51.5', 'Roof and exterior', 1500]]
-    .forEach(b => add('bud', { Title: b[1] + ' | ' + b[2] + ' | ' + b[0], BudgetYear: b[0], Station: b[1], Category: b[2], Amount: b[3], BStatus: 'Approved' }));
+  [[y, 'Station 51', '480', 6500], [y, 'Station 51', '470', 4200], [y, 'Station 52', '480', 5000], [y, 'Station 52', '594620', 3000], [y, 'Station 50', '480', 600], [y, 'Station 51.5', '330', 1500]]
+    .forEach(b => add('bud', { Title: b[1] + ' | ' + blabel(b[2]) + ' | ' + b[0], BudgetYear: b[0], Station: b[1], BudgetLine: blabel(b[2]), Amount: b[3], BStatus: 'Approved' }));
   API.facItems = async k => { await sleep(120); return db[k].map(it => MAP[k](JSON.parse(JSON.stringify(it)))); };
   API.facCreate = async (k, fields) => { await sleep(150); return MAP[k](JSON.parse(JSON.stringify(add(k, fields)))); };
   API.facDelete = async (k, id) => { await sleep(120); db[k] = db[k].filter(i => i.id !== id); };
@@ -2618,7 +2622,10 @@ function budRows(y) { return fac.bud.filter(b => b.year === y); }
 function budStatus(y) { const r = budRows(y).filter(b => b.amount); if (!r.length) return 'None'; if (r.every(b => b.status === 'Approved')) return 'Approved'; if (r.some(b => b.status === 'Submitted' || b.status === 'Approved')) return 'Submitted'; return 'Draft'; }
 function spentBy(y, st, cat) { return fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y && (!st || w.station === st) && (!cat || w.category === cat)).reduce((t, w) => t + (w.actual || 0), 0); }
 function committedBy(st) { return fac.wo.filter(w => woOpen(w) && (!st || w.station === st)).reduce((t, w) => t + (w.est || 0), 0); }
-function budgetBy(y, st, cat) { return budRows(y).filter(b => (!st || b.station === st) && (!cat || b.category === cat)).reduce((t, b) => t + b.amount, 0); }
+function budgetBy(y, st, line) { return budRows(y).filter(b => (!st || b.station === st) && (!line || b.line === line)).reduce((t, b) => t + b.amount, 0); }
+/* work orders count against 480 Repair and maintenance, projects and upgrades against capital 594620 */
+function woLine(w) { return w.type === 'Project or upgrade' ? '594620' : '480'; }
+function spentLine(y, st, line) { return fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y && (!st || w.station === st) && woLine(w) === line).reduce((t, w) => t + (w.actual || 0), 0); }
 function renderMoney() {
   const y0 = new Date().getFullYear();
   if (curTab === 'bldg') { $('money-chips').innerHTML = ''; return renderAssets(); }
@@ -2648,10 +2655,11 @@ function renderMoney() {
   h += '<div class="money-card"><div class="mh">By agency (cost split)</div><div class="mb"><table class="mt"><tr><th>Agency</th><th>Budget</th><th>Spent</th><th>Left</th></tr>' +
     ag.map(a => '<tr><td>' + a[0] + '</td><td>' + money(a[1], true) + '</td><td>' + money(a[2], true) + '</td><td class="' + (a[1] - a[2] < 0 ? 'neg' : '') + '">' + money(a[1] - a[2], true) + '</td></tr>').join('') + '</table>' +
     '<div class="small-note">Split: ' + FSTATIONS.map(s => s.key.replace('Station ', '') + ' ' + Math.round(s.ncems * 100) + '/' + Math.round((1 - s.ncems) * 100)).join(' · ') + ' (NCEMS/FD13)</div></div></div>';
-  // by category
-  const cats = CATS.map(c => [c, budgetBy(y, null, c), spentBy(y, null, c)]).filter(c => c[1] || c[2]);
-  h += '<div class="money-card"><div class="mh">' + y + ' by category</div><div class="mb">' + (cats.length ? '<table class="mt"><tr><th>Category</th><th>Budget</th><th>Spent</th></tr>' +
-    cats.map(c => '<tr><td>' + esc(c[0]) + '</td><td>' + money(c[1], true) + '</td><td class="' + (c[1] && c[2] > c[1] ? 'neg' : '') + '">' + money(c[2], true) + '</td></tr>').join('') + '</table>' : '<div class="st-empty">No budget or spending yet</div>') + '</div></div>';
+  // by budget line (Kim's account codes)
+  const lines = BUD_LINES.map(l => [blabel(l[0]), budgetBy(y, null, l[0]), spentLine(y, null, l[0]), l[2]]).filter(c => c[1] || c[2]);
+  h += '<div class="money-card"><div class="mh">' + y + ' by budget line</div><div class="mb">' + (lines.length ? '<table class="mt"><tr><th>Line</th><th>Budget</th><th>Spent</th></tr>' +
+    lines.map(c => '<tr><td>' + esc(c[0]) + '<div style="font-size:10px;color:#777">Fund ' + c[3] + '</div></td><td>' + money(c[1], true) + '</td><td class="' + (c[1] && c[2] > c[1] ? 'neg' : '') + '">' + money(c[2], true) + '</td></tr>').join('') + '</table>' : '<div class="st-empty">No budget or spending yet</div>') +
+    '<div class="small-note">Lines use Kim\'s account codes. Work orders count against 480; projects and upgrades against capital 594620. Utilities and supplies are in Kim\'s books.</div></div></div>';
   // replacement outlook
   h += replacementCard(y0);
   // recent spending
@@ -2692,21 +2700,24 @@ function renderAssets() {
 }
 /* ---- next year plan (Dennis builds it, Bryce approves) ---- */
 let planEdits = {};
-function planSuggest(y, st, cat) {
-  const svc = fac.svc.filter(s => s.active && s.station === st && s.category === cat).reduce((t, s) => t + svcAnnual(s), 0);
-  const rep = fac.asset.filter(a => a.station === st && a.category === cat && a.cost && assetReplaceYear(a) === y).reduce((t, a) => t + a.cost, 0);
-  const last = spentBy(y - 1, st, cat) - fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y - 1 && w.station === st && w.category === cat && w.type === 'Scheduled maintenance').reduce((t, w) => t + (w.actual || 0), 0);
-  return Math.round(svc + rep + Math.max(0, last));
+function planSuggest(y, st, line) {
+  if (line === '480') {
+    const svc = fac.svc.filter(s => s.active && s.station === st).reduce((t, s) => t + svcAnnual(s), 0);
+    const last = fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y - 1 && w.station === st && w.type === 'Repair').reduce((t, w) => t + (w.actual || 0), 0);
+    return Math.round(svc + last);
+  }
+  if (line === '594620') return Math.round(fac.asset.filter(a => a.station === st && a.cost && assetReplaceYear(a) === y).reduce((t, a) => t + a.cost, 0));
+  return 0;
 }
 function renderPlan(y) {
   const st = budStatus(y), editable = isManager() && st !== 'Approved', rows = budRows(y);
-  const val = (s, c) => { const k = s + '|' + c; if (planEdits[k] != null) return planEdits[k]; const r = rows.find(b => b.station === s && b.category === c); return r ? r.amount : ''; };
+  const val = (s, c) => { const k = s + '|' + c; if (planEdits[k] != null) return planEdits[k]; const r = rows.find(b => b.station === s && b.line === c); return r ? r.amount : ''; };
   let h = '<div class="money-card"><div class="mh"><span>' + y + ' facilities budget</span><span class="bstatus ' + st + '">' + (st === 'None' ? 'NOT STARTED' : st.toUpperCase()) + '</span></div><div class="mb">' +
-    '<div class="small-note" style="margin-top:0">Dennis builds the projection in October. Suggested amounts = scheduled services for the year + replacements due that year + last year\'s repairs. ' +
+    '<div class="small-note" style="margin-top:0">Dennis builds the projection in October. Rows are Kim\'s budget lines (Fund 6270 operating, 6273 capital), so it drops straight into the agency budget. Suggested: 480 = scheduled services + last year\'s repairs; 594620 = replacements due that year. Other lines: use last year\'s actual from Kim. ' +
     (st === 'Approved' ? 'Approved budgets are locked.' : 'Bryce approves it here. Approving doesn\'t spend anything.') + '</div>';
-  h += '<div class="scroll-x" style="margin-top:10px"><table class="proj-grid"><tr><th>Category</th>' + FSTATIONS.map(s => '<th>' + esc(s.key.replace('Station ', '')) + '</th>').join('') + '</tr>';
-  CATS.forEach(c => {
-    h += '<tr><td>' + esc(c) + '</td>' + FSTATIONS.map(s => {
+  h += '<div class="scroll-x" style="margin-top:10px"><table class="proj-grid"><tr><th>Budget line</th>' + FSTATIONS.map(s => '<th>' + esc(s.key.replace('Station ', '')) + '</th>').join('') + '</tr>';
+  BUD_LINES.map(l => l[0]).forEach(c => {
+    h += '<tr><td>' + esc(blabel(c)) + '</td>' + FSTATIONS.map(s => {
       const v = val(s.key, c), sug = planSuggest(y, s.key, c);
       return '<td><input inputmode="decimal" data-k="' + esc(s.key + '|' + c) + '" value="' + (v === '' ? '' : v) + '" placeholder="' + (sug || '') + '" ' + (editable ? 'oninput="planEdit(this)"' : 'readonly') + '></td>';
     }).join('') + '</tr>';
@@ -2738,11 +2749,11 @@ function planFillSuggested(y) {
 async function planSave(y, status) {
   const rows = budRows(y), batch = [];
   for (const i of document.querySelectorAll('.proj-grid input')) {
-    const [st, cat] = i.dataset.k.split('|'), raw = i.value.trim(), v = raw ? num(raw) : 0;
-    if (raw && v === null) { toast(cat + ' at ' + st + ' needs to be a number', { err: true }); i.focus(); return; }
-    const r = rows.find(b => b.station === st && b.category === cat);
+    const [st, code] = i.dataset.k.split('|'), raw = i.value.trim(), v = raw ? num(raw) : 0;
+    if (raw && v === null) { toast(blabel(code) + ' at ' + st + ' needs to be a number', { err: true }); i.focus(); return; }
+    const r = rows.find(b => b.station === st && b.line === code);
     if (r) { if (r.amount !== v || r.status !== status) batch.push({ id: r.id, fields: { Amount: v, BStatus: status } }); }
-    else if (v) batch.push({ fields: { Title: st + ' | ' + cat + ' | ' + y, BudgetYear: y, Station: st, Category: cat, Amount: v, BStatus: status } });
+    else if (v) batch.push({ fields: { Title: st + ' | ' + blabel(code) + ' | ' + y, BudgetYear: y, Station: st, BudgetLine: blabel(code), Amount: v, BStatus: status } });
   }
   if (status === 'Submitted') rows.filter(r => r.amount && !batch.find(b => b.id === r.id)).forEach(r => batch.push({ id: r.id, fields: { BStatus: status } }));
   if (!batch.length) { toast('Nothing changed'); return; }
