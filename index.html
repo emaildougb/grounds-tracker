@@ -2826,7 +2826,8 @@ async function checkForUpdate() {
     const m = t.match(/const VERSION = '([^']+)'/);
     if (!m || m[1] === VERSION) return;
     const busy = document.querySelector('#md-ov.show, #sheet.show') || xlBusy || curTab === 'fill' || curTab === 'checks' || (curTab === 'money' && moneyView === 'plan');
-    if (!busy) { location.reload(); return; }
+    let tried = ''; try { tried = sessionStorage.getItem('fg_upd') || ''; } catch (e) {}
+    if (!busy && tried !== m[1]) { try { sessionStorage.setItem('fg_upd', m[1]); } catch (e) {} const q = new URLSearchParams(location.search); q.set('u', Date.now()); location.replace(location.pathname + '?' + q.toString() + location.hash); return; }
     toast('New version ' + m[1] + ' is ready', { action: 'Update', onAction: () => location.reload(), ms: 15000 });
   } catch (e) {}
 }
