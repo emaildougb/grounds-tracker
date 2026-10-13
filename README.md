@@ -123,6 +123,11 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.12
+- New station: Station 51 Lower Bays (pole barn, metal roof). NCEMS pays all upkeep (100%); the Town of Yacolt uses the bays by contract (80/20) and is responsible for problems it causes. FD13 has no share.
+- When an admin opens the app, it adds any missing station to the Station choice column on the five facility lists (SharePoint REST, needs edit rights).
+- Update the workbook reads the station columns from the Budget tab and needs the five-station Facilities Log.xlsx.
+
 ### v2.11
 - Report a problem: picking Other asks "What kind of problem?" and Send waits for it. The answer is saved at the top of Details as "Type: ...".
 - On a computer, tapping Admin opens the Dashboard. Phones still open the Overview.

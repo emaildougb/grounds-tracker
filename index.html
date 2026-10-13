@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.11';
+const VERSION = '2.12';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -720,6 +720,7 @@ const QUICK_REASONS = ['Weather', 'Equipment down', 'Out of supplies', 'Ran out 
 /* ---------- facilities config ---------- */
 const FSTATIONS = [
   { key: 'Station 51',   addr: '404 S Parcel, Yacolt',               use: 'Main station, fire and EMS',      ncems: 0.50, bays: true },
+  { key: 'Station 51 Lower Bays', addr: '404 S Parcel, Yacolt',        use: 'Lower bays at 51: pole barn, metal roof. Town of Yacolt uses them by contract (80/20); NCEMS pays all upkeep; the Town is responsible for problems it causes', ncems: 1.00, bays: true },
   { key: 'Station 51.5', addr: '300 W Hoag, Yacolt',                 use: 'Admin modular building',          ncems: 0.75, bays: false },
   { key: 'Station 52',   addr: '15413 NE Fargher Lake Hwy, Yacolt',  use: 'EMS station',                     ncems: 1.00, bays: true },
   { key: 'Station 50',   addr: '30916 NE Sunset Falls Rd, Yacolt',   use: 'Fire sub station, Sunset Falls',  ncems: 0.00, bays: true }
@@ -1096,6 +1097,21 @@ const API = {
     const j = await graph('/sites/' + sid + '/lists', { method: 'POST', json: { displayName: FAC[k].name, columns: FAC[k].cols, list: { template: 'genericList' } } });
     return j.id;
   },
+  /* the Station choice column has to list every station, or SharePoint refuses the new one. Read with Graph, fix with SharePoint REST (column edits need it). */
+  async facStationChoices(listId) {
+    const sid = await getSiteId();
+    const j = await graph('/sites/' + sid + '/lists/' + listId + '/columns?$top=999');
+    const c = (j.value || []).find(x => x.name === 'Station');
+    return c && c.choice ? (c.choice.choices || []) : null;
+  },
+  async facSetStationChoices(listId, choices) {
+    const token = await getToken(SP_SCOPES);
+    const res = await fetch('https://' + CONFIG.siteHost + CONFIG.sitePath + "/_api/web/lists(guid'" + listId + "')/fields/getbyinternalnameortitle('Station')", {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=verbose', 'Content-Type': 'application/json;odata=verbose', 'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*' },
+      body: JSON.stringify({ __metadata: { type: 'SP.FieldChoice' }, Choices: { __metadata: { type: 'Collection(Edm.String)' }, results: choices } })
+    });
+    if (!res.ok) { const e = new Error('Could not add the new station to ' + listId + ' (HTTP ' + res.status + ')'); e.status = res.status; throw e; }
+  },
   async facAddColumn(listId, col) { const sid = await getSiteId(); return graph('/sites/' + sid + '/lists/' + listId + '/columns', { method: 'POST', json: col }); },
   async facItems(k) { const sid = await getSiteId(); return (await graphAll('/sites/' + sid + '/lists/' + facIds[k] + '/items?$expand=fields&$top=999')).map(MAP[k]); },
   async facCreate(k, fields) { const sid = await getSiteId(); const it = await graph('/sites/' + sid + '/lists/' + facIds[k] + '/items', { method: 'POST', json: { fields } }); return MAP[k](it); },
@@ -1125,9 +1141,21 @@ async function facCheck() {
   if (DEMO) { facState = 'ready'; return; }
   try {
     const found = await API.facFind();
-    if (FAC_KEYS.every(k => found[k])) { facIds = found; lsSet(LS.fids, { site: siteId, ids: found }); facState = 'ready'; }
+    if (FAC_KEYS.every(k => found[k])) { facIds = found; lsSet(LS.fids, { site: siteId, ids: found }); facState = 'ready'; if (isManager()) ensureStationChoices(); }
     else { facIds = found; facState = 'missing'; }
   } catch (e) { facState = facIds ? 'ready' : 'error'; facErr = e.message || String(e); }
+}
+let choicesChecked = false;
+async function ensureStationChoices() {
+  if (choicesChecked || DEMO) return; choicesChecked = true;
+  for (const k of FAC_KEYS) {
+    try {
+      const have = await API.facStationChoices(facIds[k]);
+      if (!have) continue;
+      const miss = FSKEYS.filter(x => have.indexOf(x) < 0);
+      if (miss.length) await API.facSetStationChoices(facIds[k], have.concat(miss));
+    } catch (e) { console.warn('station choices', k, e); }
+  }
 }
 let setupView = false;
 function openSetupCheck() { closeInfo(); navPush(); if (section !== 'admin') switchSection('admin'); setupView = true; showPage('facsetup'); renderTabbar(); renderFacSetup(); }
@@ -1163,7 +1191,7 @@ async function renderFacSetup() {
     return;
   }
   b.innerHTML = 'Facilities keeps its data in five SharePoint lists on the Facilities and Grounds site. Tap the button and the app creates what is missing, then loads the starter data (' +
-    SEED.services.length + ' scheduled services for all four stations and ' + SEED.assets.length + ' building items for replacement planning).' +
+    SEED.services.length + ' scheduled services for all the stations and ' + SEED.assets.length + ' building items for replacement planning).' +
     '<div style="margin-top:14px">' + rows.join('') + '</div>' +
     '<button class="big-btn" id="setup-go" onclick="runFacSetup()">Set up Facilities</button>' +
     '<div class="small-note" id="setup-msg">Takes about a minute. Safe to run again: it only adds what\'s missing.</div>' +
@@ -2709,11 +2737,13 @@ async function updateWorkbook() {
     const A = await xlSyncTable(xl, 'BigItems', 22, 'A', 2, assets, xlAssetRow, [[0, 'ID'], [1, 'Station'], [2, 'Item'], [5, 'Install year (app)'], [13, 'Cost (app)']]);
     const S = await xlSyncTable(xl, 'Services', 15, 'S', 3, svcs, xlSvcRow, [[0, 'ID'], [1, 'Station'], [3, 'Service'], [7, 'Last done (app)'], [10, 'Vendor (app)']]);
     // budget request: rows 7 to 13, stations in columns C to F, matched by the line code in column B
-    const labels = ((await xl.getRange('Budget', 'B6:F13')).values || []);
-    const stCols = labels[0].slice(1).map(String);
-    if (stCols.join('|') !== FSKEYS.join('|')) throw new Error('The Budget tab station columns are not in the expected order. Nothing on the Budget tab was changed.');
+    const labels = ((await xl.getRange('Budget', 'B6:L13')).values || []);
+    const hdr = labels[0].slice(1).map(String), stop = hdr.indexOf('Total request');
+    const stCols = (stop >= 0 ? hdr.slice(0, stop) : hdr).filter(x => x !== '');
+    if (stCols.join('|') !== FSKEYS.join('|')) throw new Error('The Budget tab station columns (' + stCols.join(', ') + ') do not match the app. Upload the newest Facilities Log.xlsx. Big Items and Services were updated; the Budget tab was not.');
+    const lastCol = String.fromCharCode(67 + FSKEYS.length - 1);
     const req = labels.slice(1).map(l => { const code = String(l[0]).split(' ')[0]; return FSKEYS.map(st => budgetBy(by, st, code) || ''); });
-    await xl.setRange('Budget', 'C7:F13', req);
+    await xl.setRange('Budget', 'C7:' + lastCol + '13', req);
     let kim = null;
     try { kim = await xlSyncKim(xl); } catch (e) { kim = { err: e.message }; }
     const now = new Date();
