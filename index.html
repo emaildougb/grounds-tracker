@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.12';
+const VERSION = '2.13';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -2815,6 +2815,24 @@ function demoXl() {
     }
   };
 }
+
+/* ===== stay current: check for a newer version when the app opens or comes back to the front ===== */
+let updChecked = 0;
+async function checkForUpdate() {
+  if (DEMO || Date.now() - updChecked < 60000) return;
+  updChecked = Date.now();
+  try {
+    const t = await (await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/const VERSION = '([^']+)'/);
+    if (!m || m[1] === VERSION) return;
+    const busy = document.querySelector('#md-ov.show, #sheet.show') || xlBusy || curTab === 'fill' || curTab === 'checks' || (curTab === 'money' && moneyView === 'plan');
+    if (!busy) { location.reload(); return; }
+    toast('New version ' + m[1] + ' is ready', { action: 'Update', onAction: () => location.reload(), ms: 15000 });
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
+window.addEventListener('focus', checkForUpdate);
+setTimeout(checkForUpdate, 5000);
 </script>
 
 <script>
@@ -3117,7 +3135,7 @@ async function planUnlock(y) {
 /* ================= info / setup / boot ================= */
 function openInfo() {
   const who = account ? esc(account.name) + '<br><span style="font-size:12px;color:#555">' + esc(account.username) + ' &middot; ' + esc(roleLabel()) + '</span>' : 'Not signed in';
-  $('info-body').innerHTML = '<div class="info-line"><b>Version ' + VERSION + '</b><br>Facilities: work orders, scheduled services, monthly walkthroughs, budget and replacement planning for Stations 51, 51.5, 52 and 50. Grounds: the Grounds Tracker. Everything saves to the Facilities and Grounds SharePoint site.</div>' +
+  $('info-body').innerHTML = '<div class="info-line"><b>Version ' + VERSION + '</b><br>Facilities: work orders, scheduled services, monthly walkthroughs, budget and replacement planning for Stations 51 (with the lower bays), 51.5, 52 and 50. Grounds: the Grounds Tracker. Everything saves to the Facilities and Grounds SharePoint site.</div>' +
     '<div class="info-line">Signed in as:<br><b>' + who + '</b></div>' +
     (isManager() ? '<div class="info-line">' + (isPhoneDevice() ? '<b>Phone version.</b> Admin shows the input screens. ' + (lsGet(LS_FULL, false) === true ? 'Full admin is turned on here. <a href="#" onclick="closeInfo();setFullAdmin(false);return false">Switch to phone view</a>' : 'Dashboard and budget are on the desktop version. <a href="#" onclick="closeInfo();setFullAdmin(true);return false">Show full admin here</a>') : '<b>Desktop version.</b> Full admin, including Dashboard and Budget.') + (IN_FRAME ? ' Running inside Teams.' : '') + '</div>' : '') +
     '<div class="info-line" style="font-size:12px;color:#555">Critical problems: save the work order, then call Dennis. The app refreshes every ' + CONFIG.refreshSeconds + ' seconds and when you open it.</div>' +

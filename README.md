@@ -119,9 +119,12 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 
 ## Deploying
 
-Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. iOS caches hard: delete the home screen icon and add it again after every update.
+Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. The app updates itself (v2.13 and later). Phones still on an older version need one last delete and re-add of the home screen icon.
 
 ## Changelog
+
+### v2.13
+- The app checks for a newer version when it opens and whenever it comes back to the front (at most once a minute). If nothing is being typed it reloads itself; if a form, Fill In, a walkthrough or the budget plan is open, it shows "New version is ready" with an Update button instead.
 
 ### v2.12
 - New station: Station 51 Lower Bays (pole barn, metal roof). NCEMS pays all upkeep (100%); the Town of Yacolt uses the bays by contract (80/20) and is responsible for problems it causes. FD13 has no share.
