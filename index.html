@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.8';
+const VERSION = '2.9';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -785,7 +785,7 @@ const DEMO = /[?&]demo=1/.test(location.search);
 const START_VIEW = (location.search.match(/[?&]view=([a-z]+)/) || [])[1] || '';
 const DEMO_AS = (location.search.match(/[?&]as=([a-z]+)/) || [])[1] || '';
 const LS = { cache: 'gt_cache_v1', site: 'gt_site_v1', filter: 'gt_filter_v1', cid: 'gt_clientid_v1',
-  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', area: 'fg_area_v1', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_' };
+  fcache: 'fg_fac_cache_v2', fids: 'fg_fac_ids_v2', section: 'fg_section_v3', area: 'fg_area_v1', crewSt: 'fg_crew_station_v3', draft: 'fg_check_draft_v2_', xl: 'fg_xl_v1' };
 
 let msalApp = null, account = null;
 let siteId = null;
@@ -2519,6 +2519,175 @@ async function fillAssetRemove(id) {
 </script>
 
 <script>
+/* ===== Update the workbook =====
+   Copies the app's lists into Facilities Log.xlsx (Teams > Facilities and Grounds > General) through the Graph Excel API:
+   Big Items tab <- Facility Assets, Services tab <- Facility Services (active only), Budget tab request cells <- the budget plan
+   for the workbook's budget year. Columns only the workbook has (planning estimates, qty, required by) are kept by matching
+   rows on app ID, or station + name the first time. Work orders already reach the Change Log tab through the Power Automate flow. */
+const XL = { path: '/General/Facilities Log.xlsx' };
+const COND_NUM = { Good: 4, Fair: 3, Poor: 2, Failing: 1 };
+const xlKey = (st, t) => (st + '|' + t).toLowerCase().replace(/\s+/g, ' ').trim();
+const xlDate = d => d ? (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() : '';
+const xlTxt = s => { s = String(s == null ? '' : s); return /^[=+\-@]/.test(s) ? "'" + s : s; };
+const xlNum = v => (v === null || v === undefined || v === '' || isNaN(v)) ? '' : Number(v);
+const xlShare = c => 'INDEX(Assumptions!$B$5:$B$8,MATCH(' + c + ',Assumptions!$A$5:$A$8,0))';
+const xlKeep = (old, i, dflt) => old && old[i] !== '' && old[i] !== null && old[i] !== undefined ? old[i] : (dflt === undefined ? '' : dflt);
+function xlParse(addr) {
+  const m = String(addr).match(/!?\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)$/);
+  if (!m) throw new Error('Could not read the table address ' + addr);
+  return { c1: m[1], r1: Number(m[2]), c2: m[3], r2: Number(m[4]) };
+}
+
+function xlApi() {
+  if (DEMO) return demoXl();
+  let base = '', sess = null;
+  const h = () => sess ? { 'workbook-session-id': sess } : {};
+  const ws = s => base + '/worksheets/' + encodeURIComponent(s);
+  return {
+    webUrl: '',
+    async open() {
+      const sid = await getSiteId();
+      let it;
+      try { it = await graph('/sites/' + sid + '/drive/root:' + encodeURI(XL.path) + '?$select=id,webUrl'); }
+      catch (e) { if (e.status === 404) throw new Error('Could not find Facilities Log.xlsx in the General folder of the Facilities and Grounds team.'); throw e; }
+      this.webUrl = it.webUrl || '';
+      base = '/sites/' + sid + '/drive/items/' + it.id + '/workbook';
+      try { sess = (await graph(base + '/createSession', { method: 'POST', json: { persistChanges: true } })).id; } catch (e) { sess = null; }
+    },
+    table: name => graph(base + '/tables/' + name + '/range?$select=address,formulas', { headers: h() }),
+    addRows: (name, n, w) => graph(base + '/tables/' + name + '/rows/add', { method: 'POST', json: { index: null, values: Array.from({ length: n }, () => Array(w).fill('')) }, headers: h() }),
+    getRange: (s, a) => graph(ws(s) + "/range(address='" + a + "')?$select=address,values", { headers: h() }),
+    setRange: (s, a, formulas) => graph(ws(s) + "/range(address='" + a + "')", { method: 'PATCH', json: { formulas }, headers: h() }),
+    async close() { if (sess) { try { await graph(base + '/closeSession', { method: 'POST', json: {}, headers: h() }); } catch (e) {} } }
+  };
+}
+
+function xlAssetRow(a, old, r) {
+  return ['A' + a.id, a.station, xlTxt(a.title), a.category, xlKeep(old, 4, 1), xlNum(a.installYear), xlKeep(old, 6),
+    '=IF(F' + r + '<>"",F' + r + ',IF(G' + r + '<>"",G' + r + ',""))', a.life ? a.life : xlKeep(old, 8),
+    '=IF(H' + r + '="","",YEAR(TODAY())-H' + r + ')', '=IF(H' + r + '="","",H' + r + '+I' + r + ')', '=IF(K' + r + '="","",K' + r + '-YEAR(TODAY()))',
+    COND_NUM[a.condition] || '', xlNum(a.cost), xlKeep(old, 14), '=IF(N' + r + '<>"",N' + r + ',IF(O' + r + '<>"",O' + r + ',0))', xlKeep(old, 16),
+    '=IF(K' + r + '="","",MAX(K' + r + ',Assumptions!$B$14))', '=IF(R' + r + '="","",R' + r + '+I' + r + ')', '=P' + r + '*' + xlShare('B' + r),
+    '=IF(H' + r + '="","Need install year",IF(L' + r + '<0,"Past due",IF(L' + r + '<=5,"Due within 5 yrs","OK")))',
+    a.notes ? xlTxt(a.notes) : xlKeep(old, 21)];
+}
+function xlSvcRow(s, old, r) {
+  const E = 'E' + r;
+  return ['S' + s.id, s.station, s.category, xlTxt(s.title), s.freq,
+    '=IF(' + E + '="Every 6 months",2,IF(' + E + '="Quarterly",4,IF(' + E + '="Monthly",12,IF(' + E + '="Every 3 years",1/3,IF(' + E + '="Every 2 years",0.5,IF(' + E + '="Every 5 years",0.2,1))))))',
+    s.importance, xlDate(s.lastDone), '=IF(H' + r + '="","",EDATE(H' + r + ',ROUND(12/F' + r + ',0)))',
+    '=IF(H' + r + '="","No date yet",IF(I' + r + '<TODAY(),"Overdue",IF(I' + r + '-TODAY()<=30,"Due in 30 days","Current")))',
+    xlTxt(s.vendor), s.est ? s.est : xlKeep(old, 11), '=IF(L' + r + '="","",L' + r + '*F' + r + ')', xlKeep(old, 13), s.notes ? xlTxt(s.notes) : xlKeep(old, 14)];
+}
+
+/* rewrite one table: keep workbook-only columns by matching rows, grow the table if needed, blank leftover rows */
+async function xlSyncTable(xl, name, width, prefix, nameCol, items, rowFn, expect) {
+  const t = await xl.table(name);
+  const a = xlParse(t.address), head = t.formulas[0] || [];
+  expect.forEach(([i, h]) => { if (String(head[i]).trim() !== h) throw new Error('The ' + name + ' table in the workbook has a different layout than expected (column ' + (i + 1) + ' should be "' + h + '"). Nothing was changed.'); });
+  if (head.length !== width) throw new Error('The ' + name + ' table has ' + head.length + ' columns, expected ' + width + '. Nothing was changed.');
+  const body = t.formulas.slice(1), byId = {}, byName = {}, used = new Set();
+  body.forEach((row, i) => {
+    if (String(row[nameCol] || '').trim() === '') return;
+    const id = String(row[0] || '');
+    if (id.startsWith(prefix)) byId[id] = i;
+    const k = xlKey(row[1], String(row[nameCol]).replace(/^'/, ''));
+    (byName[k] = byName[k] || []).push(i);
+  });
+  const start = a.r1 + 1;
+  const out = items.map((it, j) => {
+    let oi = byId[prefix + it.id];
+    if (oi === undefined || used.has(oi)) oi = (byName[xlKey(it.station, it.title)] || []).find(i => !used.has(i));
+    if (oi !== undefined) used.add(oi);
+    return rowFn(it, oi === undefined ? null : body[oi], start + j);
+  });
+  if (out.length > body.length) await xl.addRows(name, out.length - body.length, width);
+  const rows = Math.max(out.length, body.length);
+  while (out.length < rows) out.push(Array(width).fill(''));
+  await xl.setRange(name === 'BigItems' ? 'Big Items' : 'Services', a.c1 + start + ':' + a.c2 + (start + rows - 1), out);
+  return { count: items.length, removed: body.filter((r, i) => String(r[nameCol] || '').trim() !== '' && !used.has(i)).length };
+}
+
+let xlBusy = false;
+async function updateWorkbook() {
+  if (xlBusy) return;
+  if (!isManager()) { toast('Only admins can update the workbook'); return; }
+  xlBusy = true;
+  const btn = $('xl-btn'); if (btn) { btn.disabled = true; btn.textContent = 'Updating the workbook...'; }
+  const xl = xlApi();
+  try {
+    await xl.open();
+    const by = Number(((await xl.getRange('Assumptions', 'B15')).values || [[]])[0][0]) || new Date().getFullYear() + 1;
+    const so = Object.fromEntries(FSKEYS.map((k, i) => [k, i]));
+    const io = { High: 0, Moderate: 1, Low: 2 };
+    const assets = fac.asset.slice().sort((x, y) => (so[x.station] ?? 9) - (so[y.station] ?? 9) || x.title.localeCompare(y.title));
+    const svcs = fac.svc.filter(s => s.active).sort((x, y) => (so[x.station] ?? 9) - (so[y.station] ?? 9) || (io[x.importance] ?? 1) - (io[y.importance] ?? 1) || x.title.localeCompare(y.title));
+    const A = await xlSyncTable(xl, 'BigItems', 22, 'A', 2, assets, xlAssetRow, [[0, 'ID'], [1, 'Station'], [2, 'Item'], [5, 'Install year (app)'], [13, 'Cost (app)']]);
+    const S = await xlSyncTable(xl, 'Services', 15, 'S', 3, svcs, xlSvcRow, [[0, 'ID'], [1, 'Station'], [3, 'Service'], [7, 'Last done (app)'], [10, 'Vendor (app)']]);
+    // budget request: rows 7 to 13, stations in columns C to F, matched by the line code in column B
+    const labels = ((await xl.getRange('Budget', 'B6:F13')).values || []);
+    const stCols = labels[0].slice(1).map(String);
+    if (stCols.join('|') !== FSKEYS.join('|')) throw new Error('The Budget tab station columns are not in the expected order. Nothing on the Budget tab was changed.');
+    const req = labels.slice(1).map(l => { const code = String(l[0]).split(' ')[0]; return FSKEYS.map(st => budgetBy(by, st, code) || ''); });
+    await xl.setRange('Budget', 'C7:F13', req);
+    const now = new Date();
+    await xl.setRange('Chief Summary', 'B4', [['Updated from the app ' + now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' by ' + ((account && account.name) || 'an admin')]]);
+    await xl.close();
+    lsSet(LS.xl, { at: now.getTime(), url: xl.webUrl });
+    toast('Workbook updated: ' + A.count + ' building items, ' + S.count + ' services, ' + by + ' budget request');
+  } catch (e) {
+    await xl.close();
+    toast((e.status === 423 ? 'The workbook is locked open in desktop Excel. Close it and try again.' : 'Workbook not updated: ' + e.message), { err: true });
+  } finally {
+    xlBusy = false;
+    if ($('money-body')) renderMoney();
+  }
+}
+function xlCard() {
+  if (!isManager()) return '';
+  const last = lsGet(LS.xl, null);
+  return '<div class="money-card"><div class="mh">Facilities Log workbook</div><div class="mb">' +
+    '<div class="small-note" style="margin-top:0">Copies building items, services and the ' + (new Date().getFullYear() + 1) + ' budget plan into Facilities Log.xlsx in Teams, the workbook Bryce and Kim read. Work orders already go in on their own. Do this before you show the Chief.</div>' +
+    '<button class="big-btn" id="xl-btn" onclick="updateWorkbook()"' + (xlBusy ? ' disabled' : '') + '>' + (xlBusy ? 'Updating the workbook...' : 'Update the workbook') + '</button>' +
+    (last ? '<div class="small-note">Last updated from this device ' + mdy(new Date(last.at)) + (last.url ? ' &middot; <a href="' + esc(last.url) + '" target="_blank" rel="noopener">Open the workbook</a>' : '') + '</div>' : '') +
+    '</div></div>';
+}
+
+/* demo: a small in-memory workbook so the button can be tested without SharePoint */
+function demoXl() {
+  const W = window.__xl = window.__xl || {
+    tables: {
+      BigItems: { sheet: 'Big Items', r1: 4, c1: 'A', c2: 'V', rows: [
+        ['ID', 'Station', 'Item', 'Category', 'Qty', 'Install year (app)', 'Assumed install year', 'Install year used', 'Life (yrs)', 'Age', 'Replace year', 'Years left', 'Condition 1 to 5 (app)', 'Cost (app)', 'Planning estimate', 'Cost used', 'Estimate basis', 'Plan year', 'Next cycle', 'NCEMS share', 'Status', 'Notes'],
+        [1, 'Station 51', 'Roof', 'Roof and exterior', 1, '', '', '=x', 20, '', '', '', '', '', 48000, '', 'about 6,000 sf main roof x $8/sf', '', '', '', '', ''],
+        [2, 'Station 99', 'Old thing', 'Other', 1, '', '', '', 10, '', '', '', '', '', 500, '', 'gone', '', '', '', '', '']] },
+      Services: { sheet: 'Services', r1: 4, c1: 'A', c2: 'O', rows: [
+        ['ID', 'Station', 'Category', 'Service', 'How often', 'Times a year', 'Importance', 'Last done (app)', 'Next due', 'Status', 'Vendor (app)', 'Cost per visit', 'Yearly cost', 'Required by', 'Notes'],
+        [1, 'Station 51', 'Fire and life safety', 'Fire extinguishers: annual inspection and tag', 'Annual', '', 'High', '', '', '', '', 300, '', 'Fire code', '']] }
+    },
+    cells: { 'Assumptions!B15': 2027 }, writes: []
+  };
+  const lines = BUD_LINES.map(l => [l[0] + ' x'].concat(['', '', '', '']));
+  return {
+    webUrl: 'https://example.invalid/Facilities%20Log.xlsx',
+    async open() {}, async close() {},
+    async table(name) { const t = W.tables[name]; return { address: "'" + t.sheet + "'!" + t.c1 + t.r1 + ':' + t.c2 + (t.r1 + t.rows.length - 1), formulas: t.rows.map(r => r.slice()) }; },
+    async addRows(name, n, w) { for (let i = 0; i < n; i++) W.tables[name].rows.push(Array(w).fill('')); },
+    async getRange(s, a) {
+      if (s === 'Budget') return { values: [['Budget line'].concat(FSKEYS)].concat(lines) };
+      return { values: [[W.cells[s + '!' + a]]] };
+    },
+    async setRange(s, a, f) {
+      W.writes.push({ sheet: s, addr: a, rows: f.length });
+      const t = Object.values(W.tables).find(x => x.sheet === s);
+      if (t) { const r0 = Number(a.match(/\d+/)[0]) - t.r1; f.forEach((row, i) => { t.rows[r0 + i] = row; }); }
+      else W.cells[s + '!' + a] = f;
+    }
+  };
+}
+</script>
+
+<script>
 /* ================= CHECKS (monthly walkthrough) ================= */
 function checkGroups(stKey) { const s = fst(stKey); return WALK.concat([s && s.bays ? WALK_BAYS : WALK_MOD]); }
 function lastCheck(stKey) { return fac.chk.filter(c => c.station === stKey).sort((a, b) => (b.date || 0) - (a.date || 0))[0] || null; }
@@ -2672,6 +2841,7 @@ function renderMoney() {
     lines.map(c => '<tr><td>' + esc(c[0]) + '<div style="font-size:10px;color:#777">Fund ' + c[3] + '</div></td><td>' + money(c[1], true) + '</td><td class="' + (c[1] && c[2] > c[1] ? 'neg' : '') + '">' + money(c[2], true) + '</td></tr>').join('') + '</table>' : '<div class="st-empty">No budget or spending yet</div>') +
     '<div class="small-note">Lines use Kim\'s account codes. Work orders count against 480; projects and upgrades against capital 620. Utilities and supplies are in Kim\'s books.</div></div></div>';
   // replacement outlook
+  h += xlCard();
   h += replacementCard(y0);
   // recent spending
   const recent = fac.wo.filter(w => w.status === WOS.DONE && w.actual && woYear(w) === y).sort((a, b) => (b.dateDone || 0) - (a.dateDone || 0)).slice(0, 10);
@@ -2739,7 +2909,7 @@ function renderPlan(y) {
   if (editable) h += '<div class="row-btns" style="margin-top:12px"><button class="big-btn ghost" onclick="planFillSuggested(' + y + ')">Fill suggested</button><button class="big-btn" onclick="planSave(' + y + ',\'Draft\')">Save</button></div>' +
     '<button class="reset-link" onclick="openRefEdit(' + y + ')">Update the ' + r1 + ' and ' + r2 + ' reference numbers</button>';
   const note = rows.find(r => r.note); if (note) h += '<div class="small-note">' + esc(note.note) + '</div>';
-  h += '</div></div>';
+  h += '</div></div>' + xlCard();
   $('money-body').innerHTML = h;
   planTotals();
 }
