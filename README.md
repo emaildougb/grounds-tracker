@@ -123,6 +123,10 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.11
+- Report a problem: picking Other asks "What kind of problem?" and Send waits for it. The answer is saved at the top of Details as "Type: ...".
+- On a computer, tapping Admin opens the Dashboard. Phones still open the Overview.
+
 ### v2.10
 - Update the workbook also reads Kim's QuickBooks "6270 budget vs actual" export when it is saved in Teams General (any .xlsx with 6270 and "actual" in the name; newest wins). Read only. Copies her budget and year to date actual for 330, 410, 420, 450 (our 455), 470 and 480 into the "so far, from Kim's books" block on the Budget tab, with the sub account breakdown in Notes (480 shows the buildings and grounds part, 481 + 483). Capital rows are left alone.
 

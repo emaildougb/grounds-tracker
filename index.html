@@ -501,7 +501,7 @@
 <div class="seg" id="seg">
   <button id="seg-fac" onclick="switchSection('fac')">Facilities</button>
   <button id="seg-grd" onclick="switchSection('grd')">Grounds</button>
-  <button id="seg-admin" onclick="switchSection('admin')">Admin</button>
+  <button id="seg-admin" onclick="switchSection('admin', true)">Admin</button>
 </div>
 
 <div class="content" id="content">
@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.10';
+const VERSION = '2.11';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -1384,7 +1384,7 @@ function renderTabbar() {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[t[0]] + '</svg>' +
     '<span class="tab-lbl">' + t[1] + '</span>' + (badges[t[0]] ? '<span class="badge">' + badges[t[0]] + '</span>' : '') + '</button>').join('');
 }
-function switchSection(s) {
+function switchSection(s, tapped) {
   navPush();
   const wasRestoring = navRestoring; navRestoring = true;
   if (s === 'fac' || s === 'grd') { crewArea = s; lsSet(LS.area, s); s = 'crew'; }
@@ -1395,7 +1395,7 @@ function switchSection(s) {
   $('seg-grd').classList.toggle('on', s === 'crew' && crewArea === 'grd');
   $('seg-admin').classList.toggle('on', s === 'admin');
   $('hdr-title').textContent = s === 'admin' ? 'F&G Admin' : crewArea === 'grd' ? 'Grounds' : 'Facilities';
-  switchTab(s === 'crew' ? 'todo' : 'home');
+  switchTab(s === 'crew' ? 'todo' : (tapped && isDesk() ? 'dash' : 'home'));
   navRestoring = wasRestoring;
 }
 /* ---- in-app back: goes to the last screen, not the hub ---- */
@@ -1886,7 +1886,8 @@ function openReport(prefill) {
     '<div class="field-lbl">What\'s wrong?</div><input class="text-in" id="rep-title" maxlength="120" placeholder="Short title, like: Bay 2 door won\'t close" oninput="repCheck()">' +
     '<textarea class="note-in" id="rep-details" style="margin-top:8px;min-height:70px" placeholder="More detail (optional): what you see, hear or smell, when it started"></textarea>' +
     '<div class="field-lbl">Where in the building</div><input class="text-in" id="rep-loc" maxlength="80" placeholder="Bay 1, kitchen, men\'s restroom...">' +
-    '<div class="field-lbl">Category</div><select class="sel-in" id="rep-cat">' + CATS.map(c => '<option>' + esc(c) + '</option>').join('') + '</select>' +
+    '<div class="field-lbl">Category</div><select class="sel-in" id="rep-cat" onchange="repCheck()">' + CATS.map(c => '<option>' + esc(c) + '</option>').join('') + '</select>' +
+    '<input class="text-in" id="rep-other" maxlength="80" style="margin-top:8px;display:none" placeholder="What kind of problem? Like: gate, signage, furniture" oninput="repCheck()">' +
     '<div class="field-lbl">How bad is it?</div><div class="grid-pick prio three" id="rep-prio">' +
       '<button class="c" data-p="Critical" onclick="repPick(\'prio\',this)">Critical</button><button class="u" data-p="Urgent" onclick="repPick(\'prio\',this)">Urgent</button><button data-p="Routine" onclick="repPick(\'prio\',this)">Routine</button></div>' +
     '<div class="crit-note" id="rep-crit">Critical = affects response or safety right now. Save this, then call Dennis.</div>' +
@@ -1903,11 +1904,18 @@ function repPick(kind, btn) {
   else { rep.prio = btn.dataset.p; document.querySelectorAll('#rep-prio button').forEach(b => b.classList.toggle('on', b === btn)); }
   repCheck();
 }
-function repCheck() { $('rep-save').disabled = !(rep.station && $('rep-title').value.trim()); $('rep-crit').classList.toggle('show', rep.prio === 'Critical'); }
+function repCheck() {
+  const other = $('rep-cat').value === 'Other';
+  $('rep-other').style.display = other ? '' : 'none';
+  $('rep-save').disabled = !(rep.station && $('rep-title').value.trim() && (!other || $('rep-other').value.trim()));
+  $('rep-crit').classList.toggle('show', rep.prio === 'Critical');
+}
 function repPhoto() { photoTarget = async file => { rep.blob = await shrinkImage(file); $('rep-photo').textContent = 'Photo added (tap to change)'; }; pickPhoto(); }
 async function saveReport() {
   const title = $('rep-title').value.trim(); if (!title || !rep.station) return;
-  const fields = { Title: title, Details: $('rep-details').value.trim() || null, Location: $('rep-loc').value.trim() || null, Category: $('rep-cat').value, Station: rep.station,
+  const otherTxt = $('rep-cat').value === 'Other' ? $('rep-other').value.trim() : '';
+  const det = [otherTxt ? 'Type: ' + otherTxt : '', $('rep-details').value.trim()].filter(Boolean).join('\n');
+  const fields = { Title: title, Details: det || null, Location: $('rep-loc').value.trim() || null, Category: $('rep-cat').value, Station: rep.station,
     Priority: rep.prio, WOStatus: WOS.OPEN, WorkType: 'Repair', ReportedBy: account ? account.name : '' };
   const worker = people.find(p => (p.email || '').toLowerCase() === CONFIG.facilitiesWorker);
   if (worker) fields.AssignedToLookupId = worker.id;
