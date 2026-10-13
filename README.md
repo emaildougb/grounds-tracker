@@ -123,6 +123,10 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.7
+- Budget plan shows the agency's whole budget line for the two prior years under each line (2025 from the Final Budget Breakdown, 2026 typed in from Kim) for reference. Managers update them with "Update the reference numbers".
+- Removed Submit to the Chief and Approve. The request goes to Bryce and Kim through the Facilities Log workbook.
+
 ### v2.6
 - Budget plan and budget overview now use Kim's account codes instead of building system categories: Fund 6270 lines 330 Building supplies, 410 Professional services, 420 Communications, 455 Rental and lease, 470 Public utility service, 480 Repair and maintenance, and Capital Fund 6273 line 594620 Capital: building and equipment.
 - Work orders count against 480; work type "Project or upgrade" counts against 594620.

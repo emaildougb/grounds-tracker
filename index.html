@@ -477,6 +477,7 @@
     .fr-name { grid-column:auto; } .fr-f i { display:none; }
   }
   @media (max-width:600px) { .fg-steps { grid-template-columns:1fr; } }
+.ref-line{font-size:10px;color:#888;font-weight:400;margin-top:2px;letter-spacing:0}
 </style>
 </head>
 
@@ -681,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.6';
+const VERSION = '2.7';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -2618,7 +2619,12 @@ async function submitCheck() {
 /* ================= BUDGET + REPLACEMENT ================= */
 function setMoneyView(v) { moneyView = v; renderMoney(); }
 function setMoneyYear(y) { moneyYear = Number(y); renderMoney(); }
-function budRows(y) { return fac.bud.filter(b => b.year === y); }
+function budRows(y) { return fac.bud.filter(b => b.year === y && b.station); }
+/* Reference numbers: the agency's whole budget line from Kim's final budget (all departments). Rows with no station.
+   2025 comes from the 2025 Final Budget Breakdown (board packet 11/21/2024); 594620 shows the Facility Maintenance Plan line. */
+const REF_DEFAULT = { 2025: { '330': 5000, '410': 83900, '420': 50350, '455': 12156.03, '470': 28000, '480': 121575, '594620': 40250 } };
+function refRow(y, code) { return fac.bud.find(b => !b.station && b.year === y && b.line === code); }
+function refVal(y, code) { const r = refRow(y, code); if (r) return r.amount; const d = REF_DEFAULT[y]; return d && d[code] != null ? d[code] : null; }
 function budStatus(y) { const r = budRows(y).filter(b => b.amount); if (!r.length) return 'None'; if (r.every(b => b.status === 'Approved')) return 'Approved'; if (r.some(b => b.status === 'Submitted' || b.status === 'Approved')) return 'Submitted'; return 'Draft'; }
 function spentBy(y, st, cat) { return fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y && (!st || w.station === st) && (!cat || w.category === cat)).reduce((t, w) => t + (w.actual || 0), 0); }
 function committedBy(st) { return fac.wo.filter(w => woOpen(w) && (!st || w.station === st)).reduce((t, w) => t + (w.est || 0), 0); }
@@ -2710,28 +2716,55 @@ function planSuggest(y, st, line) {
   return 0;
 }
 function renderPlan(y) {
-  const st = budStatus(y), editable = isManager() && st !== 'Approved', rows = budRows(y);
+  const st = budStatus(y), editable = isManager(), rows = budRows(y), r1 = y - 2, r2 = y - 1;
   const val = (s, c) => { const k = s + '|' + c; if (planEdits[k] != null) return planEdits[k]; const r = rows.find(b => b.station === s && b.line === c); return r ? r.amount : ''; };
-  let h = '<div class="money-card"><div class="mh"><span>' + y + ' facilities budget</span><span class="bstatus ' + st + '">' + (st === 'None' ? 'NOT STARTED' : st.toUpperCase()) + '</span></div><div class="mb">' +
+  let h = '<div class="money-card"><div class="mh"><span>' + y + ' facilities request</span><span class="bstatus ' + (st === 'None' ? 'None' : 'Draft') + '">' + (st === 'None' ? 'NOT STARTED' : 'SAVED') + '</span></div><div class="mb">' +
     '<div class="small-note" style="margin-top:0">Dennis builds the projection in October. Rows are Kim\'s budget lines (Fund 6270 operating, 6273 capital), so it drops straight into the agency budget. Suggested: 480 = scheduled services + last year\'s repairs; 594620 = replacements due that year. Other lines: use last year\'s actual from Kim. ' +
-    (st === 'Approved' ? 'Approved budgets are locked.' : 'Bryce approves it here. Approving doesn\'t spend anything.') + '</div>';
+    'The request goes to Bryce and Kim through the Facilities Log workbook (Chief Summary and For Kim tabs). Gray numbers under each line are the agency\'s whole budget line for ' + r1 + ' and ' + r2 + ', for reference.</div>';
   h += '<div class="scroll-x" style="margin-top:10px"><table class="proj-grid"><tr><th>Budget line</th>' + FSTATIONS.map(s => '<th>' + esc(s.key.replace('Station ', '')) + '</th>').join('') + '</tr>';
   BUD_LINES.map(l => l[0]).forEach(c => {
-    h += '<tr><td>' + esc(blabel(c)) + '</td>' + FSTATIONS.map(s => {
+    const a = refVal(r1, c), b = refVal(r2, c);
+    h += '<tr><td>' + esc(blabel(c)) + '<div class="ref-line">' + r1 + ': ' + (a == null ? '\u2014' : money(a, true)) + ' &middot; ' + r2 + ': ' + (b == null ? '\u2014' : money(b, true)) + '</div></td>' + FSTATIONS.map(s => {
       const v = val(s.key, c), sug = planSuggest(y, s.key, c);
       return '<td><input inputmode="decimal" data-k="' + esc(s.key + '|' + c) + '" value="' + (v === '' ? '' : v) + '" placeholder="' + (sug || '') + '" ' + (editable ? 'oninput="planEdit(this)"' : 'readonly') + '></td>';
     }).join('') + '</tr>';
   });
   h += '<tr><td><b>Total</b></td>' + FSTATIONS.map(s => '<td style="text-align:right;font-weight:800;font-size:13px" id="pt-' + esc(s.key.replace(/\W/g, '')) + '"></td>').join('') + '</tr></table></div>';
   h += '<div style="text-align:right;font-size:15px;font-weight:800;margin-top:10px" id="pt-all"></div>';
-  if (editable) h += '<div class="row-btns" style="margin-top:12px"><button class="big-btn ghost" onclick="planFillSuggested(' + y + ')">Fill suggested</button><button class="big-btn" onclick="planSave(' + y + ',\'Draft\')">Save draft</button></div>' +
-    '<button class="big-btn amber" onclick="planSave(' + y + ',\'Submitted\')">Submit to the Chief</button>';
-  if (isApprover() && st === 'Submitted') h += '<button class="big-btn" onclick="planApprove(' + y + ')">Approve ' + y + ' budget</button>';
-  if (isApprover() && st === 'Approved') h += '<button class="reset-link" onclick="planUnlock(' + y + ')">Unlock for changes</button>';
+  if (editable) h += '<div class="row-btns" style="margin-top:12px"><button class="big-btn ghost" onclick="planFillSuggested(' + y + ')">Fill suggested</button><button class="big-btn" onclick="planSave(' + y + ',\'Draft\')">Save</button></div>' +
+    '<button class="reset-link" onclick="openRefEdit(' + y + ')">Update the ' + r1 + ' and ' + r2 + ' reference numbers</button>';
   const note = rows.find(r => r.note); if (note) h += '<div class="small-note">' + esc(note.note) + '</div>';
   h += '</div></div>';
   $('money-body').innerHTML = h;
   planTotals();
+}
+/* edit the reference numbers (agency budget line totals from Kim) */
+function openRefEdit(y) {
+  const r1 = y - 2, r2 = y - 1;
+  sheet = { kind: 'ref-edit', id: '' };
+  $('sh-title').textContent = 'Reference numbers'; $('sh-sub').textContent = 'Agency budget line totals from Kim\'s final budget (all departments)';
+  let h = '<div class="blk"><table class="proj-grid"><tr><th>Line</th><th>' + r1 + '</th><th>' + r2 + '</th></tr>';
+  BUD_LINES.forEach(l => {
+    const a = refVal(r1, l[0]), b = refVal(r2, l[0]);
+    h += '<tr><td>' + esc(blabel(l[0])) + '</td><td><input inputmode="decimal" data-ref="' + r1 + '|' + l[0] + '" value="' + (a == null ? '' : a) + '"></td><td><input inputmode="decimal" data-ref="' + r2 + '|' + l[0] + '" value="' + (b == null ? '' : b) + '"></td></tr>';
+  });
+  h += '</table><div class="small-note">' + r1 + ' starts with the numbers from the 2025 Final Budget Breakdown (board packet 11/21/2024). Capital 594620 is the Facility Maintenance Plan line. Leave a box empty if you don\'t have it.</div>' +
+    '<button class="big-btn" id="ref-save" onclick="saveRefEdit()">Save</button></div>';
+  $('sh-body').innerHTML = h;
+  $('scrim').classList.add('show'); $('sheet').classList.add('show');
+}
+async function saveRefEdit() {
+  const batch = [];
+  for (const i of document.querySelectorAll('#sh-body input[data-ref]')) {
+    const [yy, code] = i.dataset.ref.split('|'), y = Number(yy), raw = i.value.trim(), v = raw ? num(raw) : null;
+    if (raw && v === null) { toast(blabel(code) + ' ' + y + ' needs to be a number', { err: true }); i.focus(); return; }
+    const r = refRow(y, code);
+    if (r) { if (v !== null && r.amount !== v) batch.push({ id: r.id, fields: { Amount: v } }); }
+    else if (v !== null && v !== (REF_DEFAULT[y] || {})[code]) batch.push({ fields: { Title: 'Reference | ' + blabel(code) + ' | ' + y, BudgetYear: y, BudgetLine: blabel(code), Amount: v, BStatus: 'Approved', BNote: 'Agency line total from Kim' } });
+  }
+  if (!batch.length) { closeSheet(); toast('Nothing changed'); return; }
+  try { await API.facBatch('bud', batch); fac.bud = await API.facItems('bud'); saveCache(); closeSheet(); renderMoney(); toast('Reference numbers saved'); }
+  catch (e) { toast('Not saved: ' + (e.message || e), { err: true, ms: 7000 }); }
 }
 function planEdit(inp) { planEdits[inp.dataset.k] = inp.value; planTotals(); }
 function planTotals() {
@@ -2761,7 +2794,7 @@ async function planSave(y, status) {
   try {
     const res = await API.facBatch('bud', batch);
     fac.bud = await API.facItems('bud'); planEdits = {}; saveCache(); renderMoney();
-    toast(res.failed ? res.failed + ' amounts did not save. Try again.' : status === 'Submitted' ? 'Sent to the Chief for approval' : 'Draft saved', res.failed ? { err: true, ms: 7000 } : {});
+    toast(res.failed ? res.failed + ' amounts did not save. Try again.' : 'Saved', res.failed ? { err: true, ms: 7000 } : {});
   } catch (e) { toast('Not saved: ' + (e.message || e), { err: true, ms: 7000 }); }
 }
 async function planApprove(y) {
