@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.7';
+const VERSION = '2.8';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -727,7 +727,7 @@ const FSTATIONS = [
 const FSKEYS = FSTATIONS.map(s => s.key);
 /* Kim's account codes (NCEMS 2025 Final Budget Breakdown). Fund 6270 = Operating, 6273 = Capital Outlay / Reserve. */
 const BUD_LINES = [['330', 'Building supplies', '6270'], ['410', 'Professional services', '6270'], ['420', 'Communications', '6270'], ['455', 'Rental and lease', '6270'],
-  ['470', 'Public utility service', '6270'], ['480', 'Repair and maintenance', '6270'], ['594620', 'Capital: building and equipment', '6273']];
+  ['470', 'Public utility service', '6270'], ['480', 'Repair and maintenance', '6270'], ['620', 'Capital building outlay', '6273']];
 const blabel = code => { const l = BUD_LINES.find(x => x[0] === code); return l ? l[0] + ' ' + l[1] : code; };
 const CATS = ['HVAC', 'Fire and life safety', 'Electrical and generator', 'Plumbing and water', 'Doors and bays', 'Roof and exterior', 'Interior', 'Pest control', 'Other'];
 const FREQS = [['Monthly', 1], ['Quarterly', 3], ['Every 6 months', 6], ['Annual', 12], ['Every 2 years', 24], ['Every 3 years', 36], ['Every 5 years', 60]];
@@ -1031,7 +1031,7 @@ const MAP = {
   },
   bud(it) {
     const f = it.fields || {};
-    return { id: String(it.id), year: num(f.BudgetYear), station: f.Station || '', category: f.Category || '', line: String(f.BudgetLine || '').split(' ')[0], amount: num(f.Amount) || 0, status: f.BStatus || 'Draft', note: f.BNote || '' };
+    return { id: String(it.id), year: num(f.BudgetYear), station: f.Station || '', category: f.Category || '', line: (l => l === '594620' ? '620' : l)(String(f.BudgetLine || '').split(' ')[0]), amount: num(f.Amount) || 0, status: f.BStatus || 'Draft', note: f.BNote || '' };
   }
 };
 /* service derived values */
@@ -1258,7 +1258,7 @@ function setupDemo() {
   add('wo', { Title: 'Pest control quarterly', Station: 'Station 50', Category: 'Pest control', Priority: 'Routine', WOStatus: WOS.DONE, WorkType: 'Scheduled maintenance', AssignedToOther: 'Orkin', ActualCost: 120, DateDone: addDays(t, -30).toISOString() }, addDays(t, -31));
   add('chk', { Title: 'Station 52 walkthrough', Station: 'Station 52', CheckDate: addDays(t, -12).toISOString(), DoneBy: 'Nick Stafford', Problems: 1, Results: '[]' });
   add('chk', { Title: 'Station 51 walkthrough', Station: 'Station 51', CheckDate: addDays(t, -40).toISOString(), DoneBy: 'Nick Stafford', Problems: 0, Results: '[]' });
-  [[y, 'Station 51', '480', 6500], [y, 'Station 51', '470', 4200], [y, 'Station 52', '480', 5000], [y, 'Station 52', '594620', 3000], [y, 'Station 50', '480', 600], [y, 'Station 51.5', '330', 1500]]
+  [[y, 'Station 51', '480', 6500], [y, 'Station 51', '470', 4200], [y, 'Station 52', '480', 5000], [y, 'Station 52', '620', 3000], [y, 'Station 50', '480', 600], [y, 'Station 51.5', '330', 1500]]
     .forEach(b => add('bud', { Title: b[1] + ' | ' + blabel(b[2]) + ' | ' + b[0], BudgetYear: b[0], Station: b[1], BudgetLine: blabel(b[2]), Amount: b[3], BStatus: 'Approved' }));
   API.facItems = async k => { await sleep(120); return db[k].map(it => MAP[k](JSON.parse(JSON.stringify(it)))); };
   API.facCreate = async (k, fields) => { await sleep(150); return MAP[k](JSON.parse(JSON.stringify(add(k, fields)))); };
@@ -2621,16 +2621,21 @@ function setMoneyView(v) { moneyView = v; renderMoney(); }
 function setMoneyYear(y) { moneyYear = Number(y); renderMoney(); }
 function budRows(y) { return fac.bud.filter(b => b.year === y && b.station); }
 /* Reference numbers: the agency's whole budget line from Kim's final budget (all departments). Rows with no station.
-   2025 comes from the 2025 Final Budget Breakdown (board packet 11/21/2024); 594620 shows the Facility Maintenance Plan line. */
-const REF_DEFAULT = { 2025: { '330': 5000, '410': 83900, '420': 50350, '455': 12156.03, '470': 28000, '480': 121575, '594620': 40250 } };
+   2025 and 2026 come from Kim's 2026 Final Budget Line Items (Fund 6270 columns 2025 Final and 2026 Final).
+   Capital 620 is Fund 6273 account 594 22 60 620 Building Outlay: 2025 = Facility Maintenance Plan line from the 2025 board packet;
+   2026 = Facilities Maintenance 35,000 + lower bay door openers 6,000 + grading 30,000 + electrical 10,000 (matches Kim's 81,000 budget). */
+const REF_DEFAULT = {
+  2025: { '330': 5000, '410': 83900, '420': 50350, '455': 12156.03, '470': 28000, '480': 141425, '620': 40250 },
+  2026: { '330': 5000, '410': 83900, '420': 87100, '455': 8100, '470': 28000, '480': 148975, '620': 81000 }
+};
 function refRow(y, code) { return fac.bud.find(b => !b.station && b.year === y && b.line === code); }
 function refVal(y, code) { const r = refRow(y, code); if (r) return r.amount; const d = REF_DEFAULT[y]; return d && d[code] != null ? d[code] : null; }
 function budStatus(y) { const r = budRows(y).filter(b => b.amount); if (!r.length) return 'None'; if (r.every(b => b.status === 'Approved')) return 'Approved'; if (r.some(b => b.status === 'Submitted' || b.status === 'Approved')) return 'Submitted'; return 'Draft'; }
 function spentBy(y, st, cat) { return fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y && (!st || w.station === st) && (!cat || w.category === cat)).reduce((t, w) => t + (w.actual || 0), 0); }
 function committedBy(st) { return fac.wo.filter(w => woOpen(w) && (!st || w.station === st)).reduce((t, w) => t + (w.est || 0), 0); }
 function budgetBy(y, st, line) { return budRows(y).filter(b => (!st || b.station === st) && (!line || b.line === line)).reduce((t, b) => t + b.amount, 0); }
-/* work orders count against 480 Repair and maintenance, projects and upgrades against capital 594620 */
-function woLine(w) { return w.type === 'Project or upgrade' ? '594620' : '480'; }
+/* work orders count against 480 Repair and maintenance, projects and upgrades against capital 620 */
+function woLine(w) { return w.type === 'Project or upgrade' ? '620' : '480'; }
 function spentLine(y, st, line) { return fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y && (!st || w.station === st) && woLine(w) === line).reduce((t, w) => t + (w.actual || 0), 0); }
 function renderMoney() {
   const y0 = new Date().getFullYear();
@@ -2665,7 +2670,7 @@ function renderMoney() {
   const lines = BUD_LINES.map(l => [blabel(l[0]), budgetBy(y, null, l[0]), spentLine(y, null, l[0]), l[2]]).filter(c => c[1] || c[2]);
   h += '<div class="money-card"><div class="mh">' + y + ' by budget line</div><div class="mb">' + (lines.length ? '<table class="mt"><tr><th>Line</th><th>Budget</th><th>Spent</th></tr>' +
     lines.map(c => '<tr><td>' + esc(c[0]) + '<div style="font-size:10px;color:#777">Fund ' + c[3] + '</div></td><td>' + money(c[1], true) + '</td><td class="' + (c[1] && c[2] > c[1] ? 'neg' : '') + '">' + money(c[2], true) + '</td></tr>').join('') + '</table>' : '<div class="st-empty">No budget or spending yet</div>') +
-    '<div class="small-note">Lines use Kim\'s account codes. Work orders count against 480; projects and upgrades against capital 594620. Utilities and supplies are in Kim\'s books.</div></div></div>';
+    '<div class="small-note">Lines use Kim\'s account codes. Work orders count against 480; projects and upgrades against capital 620. Utilities and supplies are in Kim\'s books.</div></div></div>';
   // replacement outlook
   h += replacementCard(y0);
   // recent spending
@@ -2712,14 +2717,14 @@ function planSuggest(y, st, line) {
     const last = fac.wo.filter(w => w.status === WOS.DONE && woYear(w) === y - 1 && w.station === st && w.type === 'Repair').reduce((t, w) => t + (w.actual || 0), 0);
     return Math.round(svc + last);
   }
-  if (line === '594620') return Math.round(fac.asset.filter(a => a.station === st && a.cost && assetReplaceYear(a) === y).reduce((t, a) => t + a.cost, 0));
+  if (line === '620') return Math.round(fac.asset.filter(a => a.station === st && a.cost && assetReplaceYear(a) === y).reduce((t, a) => t + a.cost, 0));
   return 0;
 }
 function renderPlan(y) {
   const st = budStatus(y), editable = isManager(), rows = budRows(y), r1 = y - 2, r2 = y - 1;
   const val = (s, c) => { const k = s + '|' + c; if (planEdits[k] != null) return planEdits[k]; const r = rows.find(b => b.station === s && b.line === c); return r ? r.amount : ''; };
   let h = '<div class="money-card"><div class="mh"><span>' + y + ' facilities request</span><span class="bstatus ' + (st === 'None' ? 'None' : 'Draft') + '">' + (st === 'None' ? 'NOT STARTED' : 'SAVED') + '</span></div><div class="mb">' +
-    '<div class="small-note" style="margin-top:0">Dennis builds the projection in October. Rows are Kim\'s budget lines (Fund 6270 operating, 6273 capital), so it drops straight into the agency budget. Suggested: 480 = scheduled services + last year\'s repairs; 594620 = replacements due that year. Other lines: use last year\'s actual from Kim. ' +
+    '<div class="small-note" style="margin-top:0">Dennis builds the projection in October. Rows are Kim\'s budget lines (Fund 6270 operating, 6273 capital), so it drops straight into the agency budget. Suggested: 480 = scheduled services + last year\'s repairs; 620 = replacements due that year. Other lines: use last year\'s actual from Kim. ' +
     'The request goes to Bryce and Kim through the Facilities Log workbook (Chief Summary and For Kim tabs). Gray numbers under each line are the agency\'s whole budget line for ' + r1 + ' and ' + r2 + ', for reference.</div>';
   h += '<div class="scroll-x" style="margin-top:10px"><table class="proj-grid"><tr><th>Budget line</th>' + FSTATIONS.map(s => '<th>' + esc(s.key.replace('Station ', '')) + '</th>').join('') + '</tr>';
   BUD_LINES.map(l => l[0]).forEach(c => {
@@ -2748,7 +2753,7 @@ function openRefEdit(y) {
     const a = refVal(r1, l[0]), b = refVal(r2, l[0]);
     h += '<tr><td>' + esc(blabel(l[0])) + '</td><td><input inputmode="decimal" data-ref="' + r1 + '|' + l[0] + '" value="' + (a == null ? '' : a) + '"></td><td><input inputmode="decimal" data-ref="' + r2 + '|' + l[0] + '" value="' + (b == null ? '' : b) + '"></td></tr>';
   });
-  h += '</table><div class="small-note">' + r1 + ' starts with the numbers from the 2025 Final Budget Breakdown (board packet 11/21/2024). Capital 594620 is the Facility Maintenance Plan line. Leave a box empty if you don\'t have it.</div>' +
+  h += '</table><div class="small-note">' + r1 + ' and ' + r2 + ' start with Kim\'s 2026 Final Budget Line Items. Capital 620 is Building Outlay (Fund 6273, 594 22 60 620). Leave a box empty if you don\'t have it.</div>' +
     '<button class="big-btn" id="ref-save" onclick="saveRefEdit()">Save</button></div>';
   $('sh-body').innerHTML = h;
   $('scrim').classList.add('show'); $('sheet').classList.add('show');

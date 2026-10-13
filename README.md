@@ -123,6 +123,10 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.8
+- 2025 and 2026 reference numbers now come from Kim's 2026 Final Budget Line Items. 2025 line 480 corrected to $141,425 (the earlier $121,575 came from the scanned board packet).
+- Capital line renamed to match Kim's books: 620 Capital building outlay (Fund 6273, 594 22 60 620). 2026 = $81,000 (Facilities Maintenance, lower bay door openers, grading, electrical). Old rows saved as 594620 read as 620.
+
 ### v2.7
 - Budget plan shows the agency's whole budget line for the two prior years under each line (2025 from the Final Budget Breakdown, 2026 typed in from Kim) for reference. Managers update them with "Update the reference numbers".
 - Removed Submit to the Chief and Approve. The request goes to Bryce and Kim through the Facilities Log workbook.
