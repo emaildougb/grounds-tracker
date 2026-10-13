@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.9';
+const VERSION = '2.10';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -2558,8 +2558,84 @@ function xlApi() {
     addRows: (name, n, w) => graph(base + '/tables/' + name + '/rows/add', { method: 'POST', json: { index: null, values: Array.from({ length: n }, () => Array(w).fill('')) }, headers: h() }),
     getRange: (s, a) => graph(ws(s) + "/range(address='" + a + "')?$select=address,values", { headers: h() }),
     setRange: (s, a, formulas) => graph(ws(s) + "/range(address='" + a + "')", { method: 'PATCH', json: { formulas }, headers: h() }),
-    async close() { if (sess) { try { await graph(base + '/closeSession', { method: 'POST', json: {}, headers: h() }); } catch (e) {} } }
+    async close() { if (sess) { try { await graph(base + '/closeSession', { method: 'POST', json: {}, headers: h() }); } catch (e) {} } },
+    /* Kim's QuickBooks budget vs actual export, saved in the same General folder. Read only: GET requests, no session, nothing written. */
+    async kimFile() {
+      const sid = await getSiteId();
+      const kids = await graphAll('/sites/' + sid + '/drive/root:/General:/children?$select=id,name,lastModifiedDateTime,file&$top=200');
+      const f = kids.filter(k => k.file && /6270/.test(k.name) && /actual/i.test(k.name) && /\.xlsx$/i.test(k.name))
+        .sort((a, b) => String(b.lastModifiedDateTime).localeCompare(String(a.lastModifiedDateTime)))[0];
+      if (!f) return null;
+      const wb = '/sites/' + sid + '/drive/items/' + f.id + '/workbook';
+      const sheets = (await graph(wb + '/worksheets?$select=name')).value || [];
+      for (const sh of sheets) {
+        const r = await graph(wb + '/worksheets/' + encodeURIComponent(sh.name) + '/usedRange(valuesOnly=true)?$select=values');
+        if ((r.values || []).some(row => row.some(c => /^Total 480 /.test(String(c))))) return { name: f.name, modified: f.lastModifiedDateTime, values: r.values };
+      }
+      return { name: f.name, modified: f.lastModifiedDateTime, values: null };
+    }
   };
+}
+
+/* Kim's operating fund lines by the QuickBooks code. Our 455 Rental and lease is her 450 Rental / Lease Agreement. */
+const KIM_LINES = { '330': '330', '410': '410', '420': '420', '455': '450', '470': '470', '480': '480' };
+function kimParse(values) {
+  const lab = row => { const c = row.find(x => typeof x === 'string' && x.trim() !== ''); return c ? c.trim() : ''; };
+  let ac = -1, bc = -1, yy = '';
+  for (const row of values) {
+    row.forEach((c, i) => { const m = String(c).trim().match(/^Jan\s*-\s*[A-Za-z]{3}\s*(\d{2})$/); if (m && ac < 0) { ac = i; yy = m[1]; } if (String(c).trim() === 'Budget' && bc < 0) bc = i; });
+    if (ac >= 0) break;
+  }
+  if (ac < 0) throw new Error('Kim\'s file does not have the "Jan - Dec" actual column it normally has. Nothing from it was copied.');
+  const num = v => (typeof v === 'number' ? v : (v === '' || v == null ? null : Number(v)));
+  const out = {};
+  Object.entries(KIM_LINES).forEach(([ours, code]) => {
+    const ti = values.findIndex(r => lab(r).startsWith('Total ' + code + ' ·'));
+    if (ti < 0) return;
+    const hi = values.findIndex((r, i) => i < ti && lab(r).startsWith(code + ' ·'));
+    const parts = [];
+    for (let i = hi + 1; hi >= 0 && i < ti; i++) {
+      const l = lab(values[i]), a = num(values[i][ac]);
+      if (a) parts.push([l.replace(/\s*·\s*/, ' ').replace(/ - Other$/, ' other'), a]);
+    }
+    out[ours] = { actual: num(values[ti][ac]) || 0, budget: bc >= 0 ? num(values[ti][bc]) : null, parts };
+  });
+  if (!Object.keys(out).length) throw new Error('Could not find Kim\'s budget lines in her file. Nothing from it was copied.');
+  return { year: 2000 + Number(yy), lines: out };
+}
+const kmoney = n => '$' + Math.round(n).toLocaleString('en-US');
+function kimNote(code, L) {
+  const parts = L.parts.map(p => p[0] + ' ' + kmoney(p[1])).join(', ');
+  if (code === '480') {
+    const bg = L.parts.filter(p => /^48[13] /.test(p[0])).reduce((t, p) => t + p[1], 0);
+    return 'Buildings and grounds part (481 + 483): ' + kmoney(bg) + '. All of it: ' + parts;
+  }
+  return parts ? 'Agency total. ' + parts : 'Agency total, all departments';
+}
+
+/* writes Kim's year to date into the "so far, from Kim's books" block on the Budget tab, found by its title */
+async function xlSyncKim(xl) {
+  const k = await xl.kimFile();
+  if (!k) return null;
+  if (!k.values) throw new Error(k.name + ' does not look like Kim\'s budget vs actual export. Nothing from it was copied.');
+  const K = kimParse(k.values);
+  const blk = (await xl.getRange('Budget', 'A40:B80')).values || [];
+  const top = blk.findIndex(r => /so far, from Kim/.test(String(r[0])));
+  if (top < 0) throw new Error('Could not find the "so far, from Kim\'s books" block on the Budget tab.');
+  const r0 = 40 + top;  // title row; header is r0+1, lines start r0+2
+  let n = 0;
+  for (let i = top + 2; i < blk.length; i++) {
+    const code = String(blk[i][1] || '').split(' ')[0];
+    if (!/^\d{3}$/.test(code)) { if (String(blk[i][0] || '').startsWith('Source')) break; continue; }
+    const L = K.lines[code]; if (!L) continue;
+    const row = 40 + i;
+    await xl.setRange('Budget', 'C' + row + ':D' + row, [[L.budget == null ? '' : L.budget, L.actual]]);
+    await xl.setRange('Budget', 'G' + row, [[kimNote(code, L)]]);
+    n++;
+  }
+  const when = k.modified ? new Date(k.modified) : new Date();
+  await xl.setRange('Budget', 'A' + r0, [[K.year + ' so far, from Kim\'s books (reference)']]);
+  return { file: k.name, year: K.year, lines: n, when };
 }
 
 function xlAssetRow(a, old, r) {
@@ -2630,11 +2706,14 @@ async function updateWorkbook() {
     if (stCols.join('|') !== FSKEYS.join('|')) throw new Error('The Budget tab station columns are not in the expected order. Nothing on the Budget tab was changed.');
     const req = labels.slice(1).map(l => { const code = String(l[0]).split(' ')[0]; return FSKEYS.map(st => budgetBy(by, st, code) || ''); });
     await xl.setRange('Budget', 'C7:F13', req);
+    let kim = null;
+    try { kim = await xlSyncKim(xl); } catch (e) { kim = { err: e.message }; }
     const now = new Date();
     await xl.setRange('Chief Summary', 'B4', [['Updated from the app ' + now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' by ' + ((account && account.name) || 'an admin')]]);
     await xl.close();
     lsSet(LS.xl, { at: now.getTime(), url: xl.webUrl });
-    toast('Workbook updated: ' + A.count + ' building items, ' + S.count + ' services, ' + by + ' budget request');
+    toast('Workbook updated: ' + A.count + ' building items, ' + S.count + ' services, ' + by + ' budget request' +
+      (kim && kim.err ? '. Kim\'s numbers skipped: ' + kim.err : kim ? ', Kim\'s ' + kim.year + ' actuals (' + kim.lines + ' lines, from ' + kim.file + ')' : '. No file from Kim in General yet'), { ms: 9000 });
   } catch (e) {
     await xl.close();
     toast((e.status === 423 ? 'The workbook is locked open in desktop Excel. Close it and try again.' : 'Workbook not updated: ' + e.message), { err: true });
@@ -2668,12 +2747,25 @@ function demoXl() {
     cells: { 'Assumptions!B15': 2027 }, writes: []
   };
   const lines = BUD_LINES.map(l => [l[0] + ' x'].concat(['', '', '', '']));
+  const kimBlock = Array.from({ length: 41 }, () => ['', '']);
+  kimBlock[17] = ['2026 so far, from Kim\'s books (reference)', '']; kimBlock[18] = ['Fund', 'Budget line'];
+  ['330 Building supplies', '410 Professional services', '420 Communications', '455 Rental and lease', '470 Public utility service', '480 Repair and maintenance',
+   '481 Building repair and maintenance (capital fund)', '620 Building outlay', '630 Non building improvements'].forEach((t, i) => { kimBlock[19 + i] = [i < 6 ? '6270' : '6273', t]; });
+  kimBlock[28] = ['Source: Kim', ''];
+  const KV = [['', '', '', '', '', '', '', '', '', 'Jan - Dec 26', '', 'Budget'], ['', '', '', '', '330 · Building Supplies'], ['', '', '', '', '', '331 · Electrical', '', '', '', 130.2],
+    ['', '', '', '', '', '330 · Building Supplies - Other', '', '', '', 361.84, '', 5000], ['', '', '', '', 'Total 330 · Building Supplies', '', '', '', '', 865.54, '', 5000],
+    ['', '', '', '', '450 · Rental / Lease Agreement'], ['', '', '', '', 'Total 450 · Rental / Lease Agreement', '', '', '', '', 360, '', 15650],
+    ['', '', '', '', '480 · Contract Repairs & Maintenance'], ['', '', '', '', '', '481 · Building Repair/Maintenance', '', '', '', 2616.09],
+    ['', '', '', '', '', '483 · Grounds Repair/Maintenance', '', '', '', 5032.07], ['', '', '', '', '', '485 · Vehicle Repair/Maintenance', '', '', '', 28937.94],
+    ['', '', '', '', 'Total 480 · Contract Repairs & Maintenance', '', '', '', '', 50087.02, '', 148975]];
   return {
     webUrl: 'https://example.invalid/Facilities%20Log.xlsx',
     async open() {}, async close() {},
+    async kimFile() { return W.noKim ? null : { name: '6270 budget v actual.xlsx', modified: '2026-10-13T20:00:00Z', values: KV }; },
     async table(name) { const t = W.tables[name]; return { address: "'" + t.sheet + "'!" + t.c1 + t.r1 + ':' + t.c2 + (t.r1 + t.rows.length - 1), formulas: t.rows.map(r => r.slice()) }; },
     async addRows(name, n, w) { for (let i = 0; i < n; i++) W.tables[name].rows.push(Array(w).fill('')); },
     async getRange(s, a) {
+      if (s === 'Budget' && a === 'A40:B80') return { values: kimBlock };
       if (s === 'Budget') return { values: [['Budget line'].concat(FSKEYS)].concat(lines) };
       return { values: [[W.cells[s + '!' + a]]] };
     },

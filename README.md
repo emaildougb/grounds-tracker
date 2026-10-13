@@ -123,6 +123,9 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.10
+- Update the workbook also reads Kim's QuickBooks "6270 budget vs actual" export when it is saved in Teams General (any .xlsx with 6270 and "actual" in the name; newest wins). Read only. Copies her budget and year to date actual for 330, 410, 420, 450 (our 455), 470 and 480 into the "so far, from Kim's books" block on the Budget tab, with the sub account breakdown in Notes (480 shows the buildings and grounds part, 481 + 483). Capital rows are left alone.
+
 ### v2.9
 - Budget > "Update the workbook" (admins). Copies building items (Facility Assets), active services (Facility Services) and the budget plan for the workbook's budget year into Facilities Log.xlsx in Teams General, and stamps the Chief Summary. Planning estimates, qty and "required by" typed in the workbook are kept by matching rows on app ID (A12, S7), or station + name the first time. Items removed in the app drop out. Work orders still reach the Change Log through the Power Automate flow.
 
