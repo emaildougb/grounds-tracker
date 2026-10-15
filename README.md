@@ -123,6 +123,9 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.15
+- Kim Reid added to the admin (manager) list. Admins are now the chiefs (Doug, Derek, Dennis, Bryce), Chuck Andrus, Kim Reid, and Nick Stafford
+
 ### v2.14
 - Sign in once: when opened from the hub or CG Staff with `?login_hint=`, it tries a quiet sign in, then one hop through Microsoft with no typing if you're already signed in there. Remembers who signed in, so the account picker is skipped next time
 
