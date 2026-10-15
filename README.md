@@ -123,6 +123,9 @@ Upload the files to the repo (or push), GitHub Pages redeploys in about a minute
 
 ## Changelog
 
+### v2.14
+- Sign in once: when opened from the hub or CG Staff with `?login_hint=`, it tries a quiet sign in, then one hop through Microsoft with no typing if you're already signed in there. Remembers who signed in, so the account picker is skipped next time
+
 ### v2.13
 - The app checks for a newer version when it opens and whenever it comes back to the front (at most once a minute). If nothing is being typed it reloads itself; if a form, Fill In, a walkthrough or the budget plan is open, it shows "New version is ready" with an Update button instead.
 

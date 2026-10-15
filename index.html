@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.13';
+const VERSION = '2.14';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -904,21 +904,45 @@ async function initAuth() {
   const res = await msalApp.handleRedirectPromise();
   if (res && res.account) account = res.account;
   else account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
-  if (account) msalApp.setActiveAccount(account);
+  /* Sign in once: the hub passes ?login_hint=you@northcountryems.org. Try a quiet sign in first,
+     then one quick hop through Microsoft (no typing if you're already signed in there). */
+  const urlHint = new URLSearchParams(location.search).get('login_hint');
+  if (urlHint) {
+    saveLoginHint(urlHint);
+    try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])login_hint=[^&]*(&|$)/, '$1').replace(/[?&]$/, '') + location.hash); } catch (e) {}
+  }
+  if (!account && loginHint() && !IN_FRAME) {
+    try { const r = await msalApp.ssoSilent({ scopes: SCOPES, loginHint: loginHint() }); if (r && r.account) account = r.account; }
+    catch (e) {
+      let hopped = false; try { hopped = sessionStorage.getItem('ncems_sso_hop') === '1'; sessionStorage.setItem('ncems_sso_hop', '1'); } catch (er) {}
+      if (urlHint && !hopped) { await msalApp.loginRedirect({ scopes: SCOPES, loginHint: loginHint() }); return; }
+    }
+  }
+  if (account) { msalApp.setActiveAccount(account); saveLoginHint(account.username); try { sessionStorage.removeItem('ncems_sso_hop'); } catch (e) {} }
 }
+/* pass who you are along to the other NCEMS apps (Facilities and Grounds, Overtime, the hub) */
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a || !account) return;
+  let u; try { u = new URL(a.href, location.href); } catch (er) { return; }
+  if (u.host === location.host || !/(^|\.)northcountryems\.org$/i.test(u.hostname)) return;
+  if (!u.searchParams.has('login_hint')) { u.searchParams.set('login_hint', (account.username || '').toLowerCase()); a.href = u.toString(); }
+}, true);
+function loginHint() { try { return localStorage.getItem('ncems_login_hint') || ''; } catch (e) { return ''; } }
+function saveLoginHint(u) { try { if (u) localStorage.setItem('ncems_login_hint', String(u).toLowerCase()); } catch (e) {} }
 function signIn() {
   $('signin-err').classList.remove('show');
   if (IN_FRAME) {
-    msalApp.loginPopup({ scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
+    msalApp.loginPopup(loginHint() ? { scopes: SCOPES, loginHint: loginHint() } : { scopes: SCOPES, prompt: 'select_account' }).then(r => { account = r.account; msalApp.setActiveAccount(account); location.reload(); })
       .catch(e => showSigninErr({ message: (e && (e.errorMessage || e.message) || String(e)) + ' If the sign-in window was blocked, use "Open in browser" below.' }));
     return;
   }
-  msalApp.loginRedirect({ scopes: SCOPES, prompt: 'select_account' }).catch(e => showSigninErr(e));
+  msalApp.loginRedirect(loginHint() ? { scopes: SCOPES, loginHint: loginHint() } : { scopes: SCOPES, prompt: 'select_account' }).catch(e => showSigninErr(e));
 }
 function showSigninErr(e) { const b = $('signin-err'); b.textContent = (e && (e.errorMessage || e.message)) || String(e); b.classList.add('show'); }
 function signOut() {
   if (DEMO) { location.href = location.pathname; return; }
   [LS.cache, LS.site, LS.fcache, LS.fids].forEach(lsDel);
+  try { localStorage.removeItem('ncems_login_hint'); } catch (e) {}
   msalApp.logoutRedirect({ account, postLogoutRedirectUri: redirectUri() });
 }
 async function getToken(scopes) {
