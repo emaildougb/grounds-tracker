@@ -7,7 +7,7 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.5**
+**Version 2.16**
 
 ## Links
 
@@ -122,6 +122,9 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. The app updates itself (v2.13 and later). Phones still on an older version need one last delete and re-add of the home screen icon.
 
 ## Changelog
+
+### v2.16
+- New phone icon: NCEMS green and olive split corner to corner with a white building and tree, NCEMS across the bottom (matches the Open Shifts icon). `apple-touch-icon.png` is the new icon and `icon-512.png` is the big one Android uses for the icon and the launch screen. Delete the old icon from the home screen and add it again to see it
 
 ### v2.15
 - Kim Reid added to the admin (manager) list. Admins are now the chiefs (Doug, Derek, Dennis, Bryce), Chuck Andrus, Kim Reid, and Nick Stafford
