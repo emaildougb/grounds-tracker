@@ -7,11 +7,12 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.16**
+**Version 2.17**
 
 ## Links
 
-- Live: [https://emaildougb.github.io/grounds-tracker/](https://emaildougb.github.io/grounds-tracker/)
+- Live: [https://fng.northcountryems.org/](https://fng.northcountryems.org/) (GitHub address: [https://emaildougb.github.io/grounds-tracker/](https://emaildougb.github.io/grounds-tracker/))
+- Upload: [https://github.com/emaildougb/grounds-tracker/upload/main](https://github.com/emaildougb/grounds-tracker/upload/main)
 - Demo (sample data, no sign-in): [https://emaildougb.github.io/grounds-tracker/?demo=1](https://emaildougb.github.io/grounds-tracker/?demo=1)
   - See it as someone else: add `&as=nick`, `&as=tyler`, `&as=bryce`, `&as=dennis` or `&as=staff`
 - Repo: [https://github.com/emaildougb/grounds-tracker](https://github.com/emaildougb/grounds-tracker)
@@ -122,6 +123,9 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. The app updates itself (v2.13 and later). Phones still on an older version need one last delete and re-add of the home screen icon.
 
 ## Changelog
+
+### v2.17
+- Haptics: a light tick when you tap a button, link, tab or card, the same way the EP Checker does it. iPhone needs iOS 18 or newer with System Haptics on (Settings, Sounds & Haptics). Android phones vibrate. Nothing else changed
 
 ### v2.16
 - New phone icon: NCEMS green and olive split corner to corner with a white building and tree, NCEMS across the bottom (matches the Open Shifts icon). `apple-touch-icon.png` is the new icon and `icon-512.png` is the big one Android uses for the icon and the launch screen. Delete the old icon from the home screen and add it again to see it

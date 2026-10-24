@@ -682,7 +682,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.16';
+const VERSION = '2.17';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -3204,6 +3204,42 @@ async function boot() {
 }
 window.addEventListener('DOMContentLoaded', () => { boot().catch(e => { showPage('signin'); showSigninErr(e); }); });
 window.addEventListener('pagehide', saveDraft);
+</script>
+<script>
+/* NCEMS haptics 1.0 (10/24/2026, same method as EP Checker 2.30): a light tick on every tap.
+   iPhone/iPad: Safari has no vibrate, but toggling a switch style checkbox gives a system haptic
+   (iOS 18 and newer, System Haptics on). We click a hidden one. Android: navigator.vibrate. */
+(function () {
+  var TAP = 'a, button, label, select, summary, input[type=checkbox], input[type=radio], [onclick], [role=button], .card, .tab';
+  var last = 0;
+  function tick() {
+    var now = Date.now();
+    if (now - last < 60) return;   /* a label and its checkbox can fire two clicks for one tap */
+    last = now;
+    try {
+      if (typeof navigator.vibrate === 'function') { navigator.vibrate(10); return; }
+      var label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.display = 'none';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      input.tabIndex = -1;
+      label.appendChild(input);
+      document.head.appendChild(label);
+      label.click();
+      document.head.removeChild(label);
+    } catch (e) {}
+  }
+  window.ncemsHaptic = tick;
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest || t.closest('head')) return;
+    var el = t.closest(TAP);
+    if (!el || el.disabled) return;
+    tick();
+  }, true);
+})();
 </script>
 </body>
 </html>
