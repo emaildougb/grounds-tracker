@@ -7,7 +7,7 @@ One phone app for buildings and grounds at Stations 51, 51.5, 52 and 50. Two sec
 
 Everything saves to the Facilities and Grounds SharePoint site, so the data is NCEMS's, backed up by Microsoft, and visible in Teams.
 
-**Version 2.17**
+**Version 2.18**
 
 ## Links
 
@@ -123,6 +123,11 @@ Grounds alerts run as before (Power Automate "Grounds Tracker Alerts"). Faciliti
 Upload the files to the repo (or push), GitHub Pages redeploys in about a minute. The app updates itself (v2.13 and later). Phones still on an older version need one last delete and re-add of the home screen icon.
 
 ## Changelog
+
+### v2.18 (10/24/2026)
+- New top bar, the same as CG Staff: white bar, house button on the left goes to the NCEMS Hub every time (before, the back arrow went back inside the app first), NCEMS logo, "NCEMS" in black and the app name in green, North Country EMS in gray, and the i button on the right for details. iPhone status bar set to default so the clock shows on the white bar
+- In app back is now its own arrow next to the house, shown only when there is a page to go back to. Title still changes to Facilities, Grounds or F&G Admin
+- Changed index.html and README.md
 
 ### v2.17
 - Haptics: a light tick when you tap a button, link, tab or card, the same way the EP Checker does it. iPhone needs iOS 18 or newer with System Haptics on (Settings, Sounds & Haptics). Android phones vibrate. Nothing else changed

@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Facilities">
 <meta name="theme-color" content="#1C3A1C">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -21,7 +21,7 @@
     --g-deep:#1C3A1C; --g-mid:#2E6B2E; --g-accent:#3A8A3A; --g-pale:#EBF5EB;
     --warn:#B87E0A; --bad:#C13E3E; --info:#1F5C8B;
     --text:#1A1A1A; --text-muted:#555; --border:#C5DFC5; --white:#fff;
-    --tab-h:64px; --hdr-h:72px; --seg-h:52px;
+    --tab-h:64px; --hdr-h:64px; --seg-h:52px;
     --s-ns:#8A918A; --s-ns-bg:#F1F3F1;
     --s-ip:#D9A400; --s-ip-bg:#FFF7DB;
     --s-done:#3A8A3A; --s-done-bg:#E6F4E6;
@@ -478,24 +478,57 @@
   }
   @media (max-width:600px) { .fg-steps { grid-template-columns:1fr; } }
 .ref-line{font-size:10px;color:#888;font-weight:400;margin-top:2px;letter-spacing:0}
+
+/* NCEMS standard top bar (10/24/2026). Same look as CG Staff 1.21+ and Derek's Open Shifts:
+   white bar, system font, "NCEMS" in black then the app name in green, thin line, North Country EMS in gray.
+   Home button on the left always goes to the NCEMS Hub. The i button on the right holds the details. */
+.nch { position:fixed; top:0; left:0; right:0; height:calc(64px + env(safe-area-inset-top)); box-sizing:border-box;
+  padding:env(safe-area-inset-top) 16px 0; background:#fff; border-bottom:1px solid #d5e2d5; color:#1a1a1a;
+  display:flex; align-items:center; gap:10px; z-index:900; margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing:normal; text-transform:none; }
+.nch * { box-sizing:border-box; }
+.nch-logo { width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; flex-shrink:0; display:block; }
+.nch-text { flex:1; min-width:0; display:flex; align-items:center; gap:12px; text-align:left; }
+.nch-text.tap { cursor:pointer; }
+.nch-text h1 { font-family:inherit; font-size:18px; font-weight:800; letter-spacing:-.3px; line-height:1.2; text-transform:none; color:#1a1a1a; white-space:nowrap; flex-shrink:0; margin:0; padding:0; }
+.nch-text h1 .nch-g { color:#2d6a2d; }
+.nch-sub { min-width:0; padding-left:12px; border-left:1px solid #d5e2d5; display:flex; flex-direction:column; gap:1px; }
+.nch-sub .nch-org { font-size:12px; color:#5f675f; white-space:nowrap; font-weight:400; letter-spacing:normal; text-transform:none; }
+.nch-sub .nch-line { font-size:12px; color:#4a4a4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; font-weight:400; letter-spacing:normal; text-transform:none; }
+.nch-sub .nch-line:empty { display:none; }
+.nch-btn { flex-shrink:0; width:38px; height:38px; border-radius:8px; background:#fff; border:1px solid #d5e2d5; padding:0; margin:0;
+  color:#2d6a2d; display:flex; align-items:center; justify-content:center; text-decoration:none; cursor:pointer;
+  transition:background .15s, border-color .15s; font-family:inherit; box-shadow:none; }
+.nch-btn:hover { background:#e8f4e8; border-color:#a3c9a3; }
+.nch-btn:active { background:#d9ecd9; }
+.nch-btn:focus-visible { outline:2px solid #2d6a2d; outline-offset:2px; }
+.nch-btn svg { width:19px; height:19px; }
+.nch-btn .nch-i { font-size:19px; font-weight:800; font-style:italic; font-family:Georgia, serif; line-height:1; color:#2d6a2d; }
+@media (max-width:760px) {
+  .nch { padding:env(safe-area-inset-top) 10px 0; gap:8px; }
+  .nch-logo { width:34px; height:34px; }
+  .nch-text { display:block; }
+  .nch-text h1 { font-size:16px; }
+  .nch-sub { padding-left:0; border-left:0; }
+  .nch-sub .nch-org { display:none; }
+  .nch-btn { width:36px; height:36px; }
+}
+@media print { .nch { display:none !important; } }
+.nch-btn.nch-wide { width:auto; padding:0 12px; font-size:13.5px; font-weight:600; color:#4a4a4a; gap:6px; }
+.nch-btn[hidden] { display:none; }
+
 </style>
 </head>
 
 <body class="no-tabs no-seg">
 
-<header class="hdr">
-  <a class="hdr-back" id="hub-link" href="https://hub.northcountryems.org/" aria-label="Back" onclick="return appBackClick(event)">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-  </a>
-  <img class="hdr-logo" src="logo.png" alt="NCEMS">
-  <div class="hdr-text">
-    <h1 id="hdr-title">Facilities and Grounds</h1>
-    <p id="hdr-sub">North Country EMS</p>
-  </div>
-  <button class="icon-btn" id="refresh-btn" onclick="refresh(true)" aria-label="Refresh" style="display:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-  </button>
-  <button class="icon-btn" onclick="openInfo()" aria-label="Info"><span class="info-i">i</span></button>
+<header class="nch">
+  <a class="nch-btn" id="hub-link" href="https://hub.northcountryems.org/" title="NCEMS Hub" aria-label="NCEMS Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></a>
+  <button class="nch-btn" id="app-back" hidden onclick="appBack()" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <img class="nch-logo" src="logo.png" alt="">
+  <div class="nch-text"><h1><span class="nch-ncems">NCEMS </span><span class="nch-g"><span id="hdr-title">Facilities and Grounds</span></span></h1><div class="nch-sub"><span class="nch-org" id="hdr-org">North Country EMS</span><p class="nch-line" id="hdr-sub"></p></div></div>
+  <button class="nch-btn" id="refresh-btn" onclick="refresh(true)" title="Refresh" aria-label="Refresh" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+  <button class="nch-btn" onclick="openInfo()" title="Details" aria-label="Details"><span class="nch-i">i</span></button>
 </header>
 
 <div class="seg" id="seg">
@@ -682,7 +715,7 @@
    Sign-in is MSAL (single page app, no secrets). Data is Microsoft
    Graph against the Facilities and Grounds SharePoint site.
    ============================================================ */
-const VERSION = '2.17';
+const VERSION = '2.18';
 
 const CONFIG = {
   clientId:  '254c214f-bfe2-4ebb-9294-99815e167ab0',
@@ -1459,12 +1492,20 @@ function navPush() {
   if (last && last.s === st.s && last.a === st.a && last.t === st.t) return;
   navStack.push(st);
   try { history.pushState({ fg: navStack.length }, ''); } catch (e) {}
+  syncBack();
 }
 function navRestore(st) {
   navRestoring = true;
   if (st.s === 'admin') switchSection('admin'); else switchSection(st.a);
   if (st.t !== curTab) { if (st.t === 'fill') openFill(); else switchTab(st.t); }
   navRestoring = false;
+}
+/* 2.18: the house always goes to the NCEMS Hub. In app back is its own button, shown only when there is somewhere to go back to */
+function syncBack() { const b = $('app-back'); if (b) b.hidden = !navStack.length; }
+function appBack() {
+  if ($('sheet').classList.contains('show')) { closeSheet(); return; }
+  if ($('md-ov').classList.contains('show')) { closeModal(); return; }
+  if (navStack.length) history.back();
 }
 function appBackClick(e) {
   if ($('sheet').classList.contains('show')) { e.preventDefault(); closeSheet(); return false; }
@@ -1477,6 +1518,7 @@ window.addEventListener('popstate', () => {
     closeSheet(); closeModal(); try { history.pushState({ fg: navStack.length }, ''); } catch (e) {} return;
   }
   const st = navStack.pop(); if (st) navRestore(st);
+  syncBack();
 });
 function switchTab(t) {
   if (t !== curTab) navPush();
@@ -1505,7 +1547,7 @@ function render() {
     el.className = 'sync-line' + (syncErr ? ' err' : '');
     el.textContent = syncErr ? 'Could not update: ' + syncErr + (s ? ' · showing data from ' + timeStr(lastSync) : '') : s + (s ? ' · ' : '') + 'auto refresh every ' + CONFIG.refreshSeconds + 's';
   });
-  $('hdr-sub').textContent = (account ? account.name + ' · ' + roleLabel() : 'North Country EMS') + (DEMO ? ' · demo' : '');
+  $('hdr-sub').textContent = (account ? account.name + ' · ' + roleLabel() : '') + (DEMO ? ' · demo' : '');
 }
 function chipHtml(list, cur, fn) { return list.map(c => '<button class="chip' + (c[0] === cur ? ' on' : '') + '" onclick="' + fn + '(\'' + c[0] + '\')">' + esc(c[1]) + '</button>').join(''); }
 function emptyBox(msg) { return '<div class="station"><div class="st-body" style="border-radius:12px"><div class="st-empty">' + esc(msg) + '</div></div></div>'; }
